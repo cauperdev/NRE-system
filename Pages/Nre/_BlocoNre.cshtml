@@ -1,0 +1,99 @@
+@model MS.Pages.Nre.EditarModel.BlocoVisao
+@*
+    Bloco do Detalhado da NRE, como a planilha de detalhe: uma DI (invoice, PTAX, frete e seguro; itens em US$) ou uma
+    compra nacional (NF; itens em R$). Mostra em leitura; "Editar" troca para os campos (.editando) e "Pronto" volta.
+    Os valores em cinza (R$, US$ total, subtotal) são calculados — aqui ao abrir e no script de Editar.cshtml ao digitar.
+    Nomes Remessas[b].X: o script renumera antes de enviar (bloco novo vem do <template>, sem nome).
+*@
+@{
+    var e = Model.Entrada;
+    var c = Model.Calculo;
+    var imp = e.Tipo == TipoRemessa.Importacao;
+    string Nome(string campo) => Model.Indice >= 0 ? $"Remessas[{Model.Indice}].{campo}" : "";
+    string Txt(string? s) => string.IsNullOrWhiteSpace(s) ? "—" : s;
+    decimal? freteBrl = c.Reais(c.Frete), seguroBrl = c.Reais(c.Seguro);
+    var subUsd = c.Itens.Sum(i => i.TotalUsd()) + c.Frete + c.Seguro;
+}
+<div class="remessa@(Model.Editando ? " editando" : "")" data-remessa data-tipo="@e.Tipo">
+    <input type="hidden" data-campo="Tipo" name="@Nome("Tipo")" value="@e.Tipo" />
+    <div class="remessa-cab">
+        <span class="ler cab-ler">
+            <span class="di" data-ver="rotulo">@c.Rotulo()</span>
+            @if (imp) { <span class="mini">Invoice <b data-ver="Invoice">@Txt(e.Invoice)</b></span> }
+            <span class="mini">@(imp ? "PTAX" : "Ptax de referência") <b data-ver="Ptax">@Txt(e.Ptax)</b></span>
+            <span class="mini">Fornecedor <b data-ver="Fornecedor">@Txt(e.Fornecedor)</b></span>
+        </span>
+        <span class="editar cab-editar">
+            @if (imp)
+            {
+                <label class="mini">DI <input class="form-control form-control-sm" data-campo="Di" name="@Nome("Di")" value="@e.Di" maxlength="60" placeholder="25/2221014-8" /></label>
+                <label class="mini">Invoice <input class="form-control form-control-sm" data-campo="Invoice" name="@Nome("Invoice")" value="@e.Invoice" maxlength="120" /></label>
+                <label class="mini">PTAX <input class="form-control form-control-sm num curto" data-campo="Ptax" name="@Nome("Ptax")" value="@e.Ptax" inputmode="decimal" placeholder="5,3498" /></label>
+            }
+            else
+            {
+                <label class="mini">NF <input class="form-control form-control-sm" data-campo="NotaFiscal" name="@Nome("NotaFiscal")" value="@e.NotaFiscal" maxlength="200" placeholder="89507-1, 89324-1" /></label>
+                <label class="mini">Ptax de referência <input class="form-control form-control-sm num curto" data-campo="Ptax" name="@Nome("Ptax")" value="@e.Ptax" inputmode="decimal" placeholder="5,55" /></label>
+            }
+            <label class="mini">Fornecedor <input class="form-control form-control-sm" data-campo="Fornecedor" name="@Nome("Fornecedor")" value="@e.Fornecedor" maxlength="120" /></label>
+        </span>
+        @if (Model.PodeEditar)
+        {
+            <span class="acoes">
+                <button type="button" class="btn-ms b-cinza btn-sm-ms ler" data-editar-bloco>@Icones.Svg("editar", 14) Editar</button>
+                <button type="button" class="btn-ms b-verde btn-sm-ms editar" data-pronto-bloco>Pronto</button>
+                <button type="button" class="btn btn-sm btn-outline-danger editar" data-tirar-bloco title="Tirar @(imp ? "esta DI" : "esta compra") da NRE">@Icones.Svg("lixo", 14)</button>
+            </span>
+        }
+    </div>
+    <div class="rolagem">
+        <table class="tabela sem-zebra">
+            <thead>
+                <tr>
+                    <th class="esq c-cod">Código</th><th class="esq">Descrição</th><th class="c-qtd">Qtd.</th>
+                    @if (imp) { <th class="dir c-num">US$ unit.</th><th class="dir c-num">US$ total</th><th class="dir c-num">R$ total</th> }
+                    else { <th class="dir c-num">R$ unit.</th><th class="dir c-num">R$ total</th> }
+                    <th class="col-x editar"></th>
+                </tr>
+            </thead>
+            <tbody data-itens>
+                @for (var j = 0; j < e.Itens.Count; j++)
+                {
+                    <partial name="_ItemNre" model="new MS.Pages.Nre.EditarModel.ItemVisao(Model.Indice, j, e.Itens[j], c.Itens[j], c)" />
+                }
+            </tbody>
+            <tbody>
+                @if (imp)
+                {
+                    <tr class="linha-extra">
+                        <td class="esq" colspan="3">Frete</td>
+                        <td class="dir"><input class="form-control form-control-sm num editar" data-campo="Frete" name="@Nome("Frete")" value="@e.Frete" inputmode="decimal" placeholder="0,00" aria-label="Frete (US$)" /></td>
+                        <td class="dir" data-calc="frete-usd">@c.Frete.ToString("N2")</td>
+                        <td class="dir calc" data-calc="frete-brl">@(freteBrl?.ToString("N2") ?? "—")</td>
+                        <td class="col-x editar"></td>
+                    </tr>
+                    <tr class="linha-extra">
+                        <td class="esq" colspan="3">Seguro</td>
+                        <td class="dir"><input class="form-control form-control-sm num editar" data-campo="Seguro" name="@Nome("Seguro")" value="@e.Seguro" inputmode="decimal" placeholder="0,00" aria-label="Seguro (US$)" /></td>
+                        <td class="dir" data-calc="seguro-usd">@c.Seguro.ToString("N2")</td>
+                        <td class="dir calc" data-calc="seguro-brl">@(seguroBrl?.ToString("N2") ?? "—")</td>
+                        <td class="col-x editar"></td>
+                    </tr>
+                }
+                <tr class="subtotal">
+                    <td class="esq" colspan="@(imp ? 4 : 3)">Subtotal @(imp ? "da DI" : "da compra")</td>
+                    @if (imp) { <td class="dir" data-calc="sub-usd">@subUsd.ToString("N2")</td> } else { <td></td> }
+                    <td class="dir" data-calc="sub-brl">@(c.PtaxPendente ? "PTAX pendente" : c.Reais().ToString("N2"))</td>
+                    <td class="col-x editar"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    @if (Model.PodeEditar)
+    {
+        <div class="remessa-pe editar">
+            <button type="button" class="btn-ms b-azul btn-sm-ms" data-mais-item>@Icones.Svg("mais", 14) Item</button>
+            <span class="leve">@(imp ? "Digite o dólar e a PTAX; os reais (em cinza) o sistema calcula." : "Valores em reais. A Ptax de referência só converte para dólar no Resumo.")</span>
+        </div>
+    }
+</div>

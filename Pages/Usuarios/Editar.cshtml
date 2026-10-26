@@ -1,0 +1,118 @@
+@page "{id:int?}"
+@model MS.Pages.Usuarios.EditarModel
+@*
+    ============================================================================
+    TELA: USUÁRIOS — cadastro (visual)  ·  lógica em Editar.cshtml.cs
+    Campos: usuário (matrícula), acesso (rede ou conta local — só o Administrador vê), senha (só conta local quando o
+            login pela rede está ligado), e-mail + "Receber os avisos por e-mail", primeiro e último nome, grupo,
+            área (é dela que a pessoa recebe os avisos), ativo, membro da equipe.
+    Botões: Salvar · Salvar e adicionar outro · Remover.
+    ============================================================================
+*@
+@{
+    ViewData["Title"] = "Usuários";
+    ViewData["Trilha"] = "Autorização";
+    ViewData["TrilhaPagina"] = "Usuários";
+    ViewData["TrilhaUrl"] = Url.Page("Index");
+    ViewData["TrilhaAtual"] = Model.Usu.Id > 0 ? Model.Usu.Login : "Adicionar usuário";
+    var bloqueado = Model.Bloqueado;
+}
+<form method="post" class="form-layout">
+    <div class="cartao">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        @if (bloqueado)
+        {
+            <div class="alert alert-warning">Coordenador não mexe em conta de Administrador.</div>
+        }
+        <fieldset disabled="@bloqueado">
+            <div class="campo">
+                <label class="obrig" asp-for="Usu.Login">Usuário</label>
+                <div>
+                    <input class="form-control manter-caixa" asp-for="Usu.Login" required maxlength="40" autocomplete="off" />
+                    @if (Model.PelaRede) { <div class="ajuda">A matrícula (a mesma do login da rede / Windows).</div> }
+                </div>
+            </div>
+            @* Login pela rede (AD): a senha é a do Windows. Só a conta local (marcada pelo Administrador) tem senha do sistema. *@
+            @if (Model.PelaRede && Model.Grupo == Grupo.Administrador)
+            {
+                <div class="campo">
+                    <label>Acesso</label>
+                    <div>
+                        <div class="form-check"><input class="form-check-input" asp-for="Usu.ContaLocal" data-conta-local /><label class="form-check-label" asp-for="Usu.ContaLocal">Conta local (entra com senha do sistema, sem a rede)</label></div>
+                        <div class="ajuda">Deixe desmarcado para entrar com a matrícula e a senha da rede. Use conta local só para o acesso de emergência (admin).</div>
+                    </div>
+                </div>
+            }
+            <div class="campo" id="campoSenha" hidden="@(!Model.UsaSenhaDoSistema)">
+                <label class="@(Model.Usu.Id == 0 || string.IsNullOrEmpty(Model.Usu.SenhaHash) ? "obrig" : "")" for="NovaSenha">Senha</label>
+                <div>
+                    <input class="form-control" type="password" name="NovaSenha" id="NovaSenha" autocomplete="new-password" minlength="6" />
+                    <div class="ajuda">@(string.IsNullOrEmpty(Model.Usu.SenhaHash) ? "Mínimo de 6 caracteres." : "Deixe em branco para manter a senha atual.")</div>
+                </div>
+            </div>
+            @if (Model.PelaRede)
+            {
+                <div class="campo" id="avisoRede" hidden="@Model.UsaSenhaDoSistema">
+                    <label>Senha</label>
+                    <div class="form-control-plaintext text-muted">A senha é a da rede (a mesma do Windows): o sistema não guarda.</div>
+                </div>
+            }
+            @* O sistema NRE não manda e-mail: "Receber os avisos por e-mail" (do MS) vai escondido, sem mudar. *@
+            <div class="campo">
+                <label asp-for="Usu.Email">Endereço de email</label>
+                <div>
+                    <input class="form-control" asp-for="Usu.Email" type="email" maxlength="120" />
+                    <input type="hidden" asp-for="Usu.RecebeEmail" />
+                </div>
+            </div>
+            <div class="campo"><label class="obrig" asp-for="Usu.PrimeiroNome">Primeiro nome</label><input class="form-control" asp-for="Usu.PrimeiroNome" required maxlength="60" /></div>
+            <div class="campo"><label asp-for="Usu.UltimoNome">Último nome</label><input class="form-control" asp-for="Usu.UltimoNome" maxlength="60" /></div>
+            <div class="campo">
+                <label class="obrig" asp-for="Usu.Grupo">Grupo</label>
+                <div>
+                    <select class="form-select" asp-for="Usu.Grupo">
+                        @foreach (var g in Model.GruposPermitidos) { <option value="@g">@g.Nome()</option> }
+                    </select>
+                    <div class="ajuda">O cargo aparece embaixo do nome, no menu.</div>
+                </div>
+            </div>
+            <div class="campo">
+                <label asp-for="Usu.CelulaId">Área</label>
+                <select class="form-select" asp-for="Usu.CelulaId" asp-items="@(new SelectList(Model.Celulas, "Id", "Nome"))"><option value="">—</option></select>
+            </div>
+            <div class="campo">
+                <label>Situação</label>
+                <div>
+                    <div class="form-check"><input class="form-check-input" asp-for="Usu.Ativo" /><label class="form-check-label" asp-for="Usu.Ativo">Ativo (pode entrar no sistema)</label></div>
+                    <div class="form-check"><input class="form-check-input" asp-for="Usu.MembroEquipe" /><label class="form-check-label" asp-for="Usu.MembroEquipe">Membro da equipe</label></div>
+                </div>
+            </div>
+        </fieldset>
+    </div>
+    <div class="lado">
+        @if (!bloqueado)
+        {
+            <button class="btn-ms b-verde" name="acao" value="salvar">Salvar</button>
+            <button class="btn-ms b-azul" name="acao" value="outro">Salvar e adicionar outro(a)</button>
+            @if (Model.Usu.Id > 0 && Model.Usu.Id != Model.UsuarioId)
+            {
+                <button class="btn-ms b-vermelho" asp-page-handler="Remover" data-confirmar="Remover este usuário?" formnovalidate>Remover</button>
+            }
+        }
+        @if (Model.Usu.Id > 0)
+        {
+            <div class="sep"></div>
+            <a class="btn-ms b-contorno-azul" asp-page="/Historico/Index" asp-route-entidade="Usuario" asp-route-id="@Model.Usu.Id">Histórico</a>
+        }
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        // Conta local marcada: mostra o campo de senha; desmarcada: a senha é a da rede.
+        document.querySelector('[data-conta-local]')?.addEventListener('change', e => {
+            document.getElementById('campoSenha').hidden = !e.target.checked;
+            document.getElementById('avisoRede').hidden = e.target.checked;
+        });
+    </script>
+}

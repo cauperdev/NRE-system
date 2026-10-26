@@ -1,0 +1,28 @@
+@model MS.Servicos.Aviso
+@*
+    ============================================================================
+    AVISO AMARELO EM LISTA (ex.: resumo da importação do Excel) — criado pelas telas com Avisar(...) (Servicos/MsPage.cs).
+    Mostra os 6 primeiros itens de cada grupo e o resto com "Ver mais".
+    ============================================================================
+*@
+@* Aviso amarelo em lista: mostra os 6 primeiros itens de cada grupo; o resto aparece com "Ver mais" (e some com "Ver menos"). *@
+@{ const int visiveis = 6; }
+<div class="alert alert-warning alert-dismissible fade show aviso-lista">
+    <div class="fw-bold">@Model.Titulo</div>
+    @for (var n = 0; n < Model.Grupos.Count; n++)
+    {
+        var g = Model.Grupos[n];
+        <div class="mt-2">@g.Titulo</div>
+        @if (g.Itens.Count > 0)
+        {
+            <ul>@foreach (var i in g.Itens.Take(visiveis)) { <li>@i</li> }</ul>
+        }
+        @if (g.Itens.Count > visiveis)
+        {
+            <ul id="aviso-mais-@n" hidden>@foreach (var i in g.Itens.Skip(visiveis)) { <li>@i</li> }</ul>
+            <button type="button" class="ver-mais" data-alternar="#aviso-mais-@n" data-texto-menos="Ver menos">Ver mais @(g.Itens.Count - visiveis)</button>
+        }
+    }
+    @if (Model.Dica != null) { <div class="mt-2 small">@Model.Dica</div> }
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>

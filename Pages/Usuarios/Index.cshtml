@@ -1,0 +1,79 @@
+@page
+@model MS.Pages.Usuarios.IndexModel
+@inject MS.Servicos.Rede RedeAd
+@*
+    ============================================================================
+    TELA: USUÁRIOS — lista (visual)  ·  lógica em Index.cshtml.cs
+    Partes: 1. filtros · 2. botões (Adicionar, Remover selecionados) · 3. tabela com caixinhas
+            (no celular aparecem só Usuário, Grupo e Ativo; as demais colunas têm d-none d-md-table-cell)
+            · 4. páginas de 50 (Shared/_Paginacao.cshtml).
+    ============================================================================
+*@
+@{
+    ViewData["Title"] = "Usuários";
+    ViewData["Trilha"] = "Autorização";
+    object Filtros(int pagina) => new { Model.GrupoFiltro, Model.CelulaId, Model.Q, Pagina = pagina };
+    var variasPaginas = Model.Paginas > 1;   // "marcar todos" vale para todas as páginas
+}
+<form method="get" class="filtros">
+    <select class="form-select" asp-for="GrupoFiltro">
+        <option value="">grupos</option>
+        @foreach (var g in Acesso.Grupos) { <option value="@g">@g.Nome()</option> }
+    </select>
+    <input class="form-control" asp-for="Q" placeholder="Usuário ou nome" />
+    <button class="btn-ms b-azulclaro" type="submit">Pesquisar</button>
+</form>
+<form method="post">
+    @* Com "marcar todos" marcado (lista com várias páginas), Remover vale para todos da lista filtrada. *@
+    <input type="hidden" name="todos" id="removerTodos" value="false" />
+    <div class="barra-acoes barra-grade">
+        <a class="btn-ms b-verde" asp-page="Editar">@Icones.Svg("mais") Adicionar usuário</a>
+        @if (Model.PodeEditar && Model.Lista.Count > 0)
+        {
+            <button class="btn-ms b-vermelho" asp-page-handler="Remover" asp-route-grupofiltro="@Model.GrupoFiltro" asp-route-celulaid="@Model.CelulaId" asp-route-q="@Model.Q" asp-route-pagina="@Model.Pagina" data-exige-selecao=".sel-usu" data-confirmar="Remover {n} usuário(s) marcado(s)?" data-confirmar-todos="Remover TODOS os {n} usuários da lista (todas as páginas)? Você e os administradores (se você não for um) ficam.">@Icones.Svg("lixo") Remover selecionados</button>
+        }
+    </div>
+
+    <div class="cartao">
+        @* Tabela também no celular: lá ficam só caixinha, usuário (com o nome embaixo), grupo e ativo. *@
+        <table class="tabela">
+            <thead>
+                <tr>
+                    @if (Model.PodeEditar) { <th class="col-sel"><input type="checkbox" class="form-check-input" data-marcar-todos=".sel-usu" data-total="@(variasPaginas ? (int?)Model.Total : null)" data-todos="@(variasPaginas ? "#removerTodos" : null)" aria-label="Marcar todos" /></th> }
+                    <th class="esq">Usuário</th>
+                    <th class="esq d-none d-md-table-cell">Primeiro nome</th>
+                    <th class="esq d-none d-md-table-cell">Último nome</th>
+                    <th class="esq d-none d-md-table-cell">Endereço de email</th>
+                    <th class="esq d-none d-md-table-cell">Área</th>
+                    <th class="esq">Grupo</th>
+                    <th>Ativo</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in Model.Lista)
+                {
+                    <tr class="linha-clicavel" data-href="@Url.Page("Editar", new { id = u.Id })">
+                        @if (Model.PodeEditar)
+                        {
+                            @* O próprio usuário (e, para quem não é administrador, os administradores) não pode ser removido. *@
+                            <td class="col-sel">@if (Model.PodeRemover(u)) { <input type="checkbox" class="form-check-input sel-usu" name="ids" value="@u.Id" aria-label="Marcar @u.Login" /> }</td>
+                        }
+                        <td class="esq">
+                            <b class="nome-azul">@u.Login</b>
+                            @* Login pela rede ligado: marca quem entra com senha do sistema (ex.: admin de emergência). *@
+                            @if (RedeAd.Ativo && u.ContaLocal) { <span class="badge text-bg-secondary ms-1" title="Entra com a senha do sistema, sem a rede">conta local</span> }
+                            <div class="small text-muted text-uppercase d-md-none">@u.PrimeiroNome @u.UltimoNome</div>
+                        </td>
+                        <td class="esq text-uppercase d-none d-md-table-cell">@u.PrimeiroNome</td>
+                        <td class="esq text-uppercase d-none d-md-table-cell">@u.UltimoNome</td>
+                        <td class="esq d-none d-md-table-cell">@u.Email</td>
+                        <td class="esq d-none d-md-table-cell">@(u.Celula?.Nome ?? "-")</td>
+                        <td class="esq">@u.Grupo.Nome()</td>
+                        <td>@if (u.Ativo) { <span class="st-ok">●</span> } else { <span class="st-atrasada">●</span> }</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</form>
+<partial name="_Paginacao" model='new Paginacao(Model.Pagina, Model.Paginas, p => Url.Page("Index", Filtros(p)), Model.Total, Model.Total == 1 ? "usuário" : "usuários")' />

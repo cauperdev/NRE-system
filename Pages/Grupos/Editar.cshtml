@@ -1,0 +1,79 @@
+@page "{grupo}"
+@model MS.Pages.Grupos.EditarModel
+@*
+    ============================================================================
+    TELA: GRUPOS — permissões (visual)  ·  lógica em Editar.cshtml.cs
+    Tabela: uma linha por tela, com as caixinhas Ver e Editar (lista das telas em Servicos/Acesso.cs → Modulos).
+    ============================================================================
+*@
+@{
+    ViewData["Title"] = "Grupos";
+    ViewData["Trilha"] = "Autorização";
+    ViewData["TrilhaPagina"] = "Grupos";
+    ViewData["TrilhaUrl"] = Url.Page("Index");
+    ViewData["TrilhaAtual"] = Model.GrupoAlvo.Nome();
+    var ro = !Model.PodeEditar;
+}
+<form method="post" class="form-layout">
+    <div class="cartao">
+        <h2 class="h5 mb-3">Permissões do grupo <b>@Model.GrupoAlvo.Nome()</b></h2>
+
+        <table class="tabela tabela-permissoes">
+            <thead><tr><th class="esq">Tela</th><th>Ver</th><th>Editar</th></tr></thead>
+            <tbody>
+                @foreach (var m in Acesso.Modulos)
+                {
+                    var (ver, editar) = Model.Atual[m.Chave];
+                    var travado = Acesso.Travado(Model.GrupoAlvo, m.Chave);
+                    <tr>
+                        <td class="esq">
+                            @m.Nome
+                            @if (m.Ajuda != "") { <div class="small text-muted">@m.Ajuda</div> }
+                            @if (travado) { <div class="small text-muted">O Administrador sempre mantém este acesso.</div> }
+                        </td>
+                        <td>
+                            @if (m.TemVer)
+                            {
+                                <input type="checkbox" class="form-check-input perm-ver" name="ver" value="@m.Chave" data-modulo="@m.Chave"
+                                       checked="@ver" disabled="@(ro || travado)" aria-label="Ver @m.Nome" />
+                            }
+                            else { <span class="text-muted">—</span> }
+                        </td>
+                        <td>
+                            @if (m.TemEditar)
+                            {
+                                <input type="checkbox" class="form-check-input perm-editar" name="editar" value="@m.Chave" data-modulo="@m.Chave"
+                                       checked="@editar" disabled="@(ro || travado)" aria-label="Editar @m.Nome" />
+                            }
+                            else { <span class="text-muted">—</span> }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="lado">
+        @if (!ro)
+        {
+            <button class="btn-ms b-verde" name="acao" value="salvar">Salvar</button>
+            <button class="btn-ms b-cinza" asp-page-handler="Padrao" data-confirmar="Voltar as permissões de @Model.GrupoAlvo.Nome() para o padrão do sistema?">Restaurar padrão</button>
+        }
+        <div class="sep"></div>
+        <a class="btn-ms b-contorno-azul" asp-page="/Historico/Index" asp-route-entidade="Grupo" asp-route-id="@((int)Model.GrupoAlvo)">Histórico</a>
+        <a class="btn-ms b-contorno-azul" asp-page="Index" asp-route-volta="1">@Icones.Svg("esquerda", 16) Voltar</a>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        // Editar inclui Ver; tirar o Ver tira o Editar.
+        document.querySelectorAll('.perm-editar').forEach(e => e.addEventListener('change', () => {
+            const ver = document.querySelector(`.perm-ver[data-modulo="${e.dataset.modulo}"]`);
+            if (e.checked && ver) ver.checked = true;
+        }));
+        document.querySelectorAll('.perm-ver').forEach(v => v.addEventListener('change', () => {
+            const ed = document.querySelector(`.perm-editar[data-modulo="${v.dataset.modulo}"]`);
+            if (!v.checked && ed) ed.checked = false;
+        }));
+    </script>
+}

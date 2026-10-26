@@ -1,0 +1,25 @@
+@model string
+@*
+    ============================================================================
+    JANELA "IMPORTAR EXCEL" (Equipamentos, Cronograma, Spare Parts, Histórico JMS e NRE) — escolher o arquivo e enviar.
+    O texto de ajuda vem de cada tela; a leitura da planilha está em Servicos/Excel.cs (NRE: Servicos/ImportarNre.cs).
+    ViewData["ImportarSemModelo"] = true: tela sem "Baixar modelo" (NRE) — não mostra a linha do modelo.
+    ============================================================================
+*@
+@* Modal "Importar Excel". O modelo (string) é o texto de ajuda da tela. *@
+<div class="modal fade janela-confirmar" id="modalImportar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" method="post" asp-page-handler="Importar" enctype="multipart/form-data">
+            <div class="modal-header"><h5 class="modal-title">Importar Excel</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                @if (ViewData["ImportarSemModelo"] is not true)
+                {
+                    <p class="small text-muted mb-1">Use a planilha do botão <b>Baixar modelo</b> (ou a da <b>Extração</b>).</p>
+                }
+                <p class="small text-muted">@Model</p>
+                <input class="form-control" type="file" name="arquivo" accept=".xlsx" required />
+            </div>
+            <div class="modal-footer"><button type="button" class="btn-ms b-cinza" data-bs-dismiss="modal">Cancelar</button><button class="btn-ms b-azul" type="submit">@Icones.Svg("enviar") Importar</button></div>
+        </form>
+    </div>
+</div>

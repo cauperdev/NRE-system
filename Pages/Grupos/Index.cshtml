@@ -1,0 +1,28 @@
+@page
+@model MS.Pages.Grupos.IndexModel
+@*
+    ============================================================================
+    TELA: GRUPOS — lista (visual)  ·  lógica em Index.cshtml.cs
+    No celular cada grupo vira um cartão só com o nome do cargo (estilos.css seção 16).
+    ============================================================================
+*@
+@{
+    ViewData["Title"] = "Grupos";
+    ViewData["Trilha"] = "Autorização";
+}
+<p class="text-muted">Clique num grupo para definir o que ele pode ver e editar. O grupo de cada pessoa é escolhido no cadastro do usuário.</p>
+
+<div class="cartao">
+    <table class="tabela tabela-cards tabela-grupos">
+        <thead><tr><th class="esq">Grupo</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var g in Acesso.Grupos)
+            {
+                <tr class="linha-clicavel" data-href="@Url.Page("Editar", new { grupo = g })">
+                    <td class="esq sem-rotulo"><b class="nome-azul text-uppercase">@g.Nome()</b></td>
+                    <td class="sem-rotulo text-end acao-ic">@Icones.Svg("direita", 18)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

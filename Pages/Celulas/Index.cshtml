@@ -1,0 +1,66 @@
+@page
+@model MS.Pages.Celulas.IndexModel
+@*
+    ============================================================================
+    TELA: ÁREAS (visual; no código e no banco o nome continua Celula)  ·  lógica em Index.cshtml.cs
+    Partes: 1. campo do nome + logo do cliente (opcional) + Adicionar/Salvar · 2. Remover selecionados
+            · 3. tabela com caixinhas e o logo (também no celular) · 4. páginas de 50 (Shared/_Paginacao.cshtml).
+    O logo aparece nos cartões do alto do Dashboard (Pages/Index.cshtml); clicar na linha da área abre para trocar.
+    ============================================================================
+*@
+@{
+    ViewData["Title"] = "Áreas";
+    ViewData["Trilha"] = "Autorização";
+    var variasPaginas = Model.Paginas > 1;   // "marcar todas" vale para todas as páginas
+}
+@if (Model.PodeEditar)
+{
+    <form method="post" asp-page-handler="Salvar" asp-route-pagina="@Model.Pagina" class="filtros" enctype="multipart/form-data">
+        <input type="hidden" name="id" value="@Model.EditandoId" />
+        <input class="form-control" name="nome" value="@Model.EditandoNome" placeholder="Nome da área" required maxlength="80" />
+        <label class="campo-logo" title="Logo do cliente (aparece nos cartões do Dashboard)">
+            <span class="small text-secondary fw-bold">Logo:</span>
+            <input class="form-control form-control-sm" type="file" name="logo" accept="image/png,image/jpeg,image/webp" />
+        </label>
+        @if (Model.EditandoLogo != null)
+        {
+            <img class="logo-area" src="@Url.Page("/Index", "Logo", new { id = Model.EditandoId, v = Model.EditandoLogo })" alt="Logo de @Model.EditandoNome" />
+            <label class="small"><input type="checkbox" class="form-check-input" name="removerLogo" value="true" /> Remover logo</label>
+        }
+        <button class="btn-ms b-verde" type="submit">@Icones.Svg(Model.EditandoId > 0 ? "ok" : "mais") @(Model.EditandoId > 0 ? "Salvar" : "Adicionar área")</button>
+        @if (Model.EditandoId > 0) { <a class="btn-ms b-cinza" asp-page="Index" asp-route-pagina="@Model.Pagina">Cancelar</a> }
+    </form>
+}
+<form method="post">
+    @* Com "marcar todas" marcado (lista com várias páginas), Remover vale para todas as áreas. *@
+    <input type="hidden" name="todos" id="removerTodos" value="false" />
+    @if (Model.PodeEditar && Model.Lista.Count > 0)
+    {
+        <div class="barra-acoes barra-grade">
+            <button class="btn-ms b-vermelho" asp-page-handler="Remover" asp-route-pagina="@Model.Pagina" data-exige-selecao=".sel-cel" data-confirmar="Remover {n} área(s) marcada(s)? Os usuários e equipamentos delas ficam sem área." data-confirmar-todos="Remover TODAS as {n} áreas (todas as páginas)? Os usuários e equipamentos delas ficam sem área.">@Icones.Svg("lixo") Remover selecionados</button>
+        </div>
+    }
+    <div class="cartao">
+        @* Tabela também no celular (poucas colunas): caixinha + nome. *@
+        <table class="tabela">
+            <thead>
+                <tr>
+                    @if (Model.PodeEditar) { <th class="col-sel"><input type="checkbox" class="form-check-input" data-marcar-todos=".sel-cel" data-total="@(variasPaginas ? (int?)Model.Total : null)" data-todos="@(variasPaginas ? "#removerTodos" : null)" aria-label="Marcar todas" /></th> }
+                    <th class="esq">Área</th>
+                    <th class="esq">Logo</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model.Lista)
+                {
+                    <tr class="@(Model.PodeEditar ? "linha-clicavel" : "")" data-href="@(Model.PodeEditar ? Url.Page("Index", new { editar = c.Id, Model.Pagina }) : null)">
+                        @if (Model.PodeEditar) { <td class="col-sel"><input type="checkbox" class="form-check-input sel-cel" name="ids" value="@c.Id" aria-label="Marcar @c.Nome" /></td> }
+                        <td class="esq"><b class="nome-azul">@c.Nome</b></td>
+                        <td class="esq">@if (c.Logo != null) { <img class="logo-area" src="@Url.Page("/Index", "Logo", new { id = c.Id, v = c.Logo })" alt="Logo de @c.Nome" /> } else { <span class="text-muted small">-</span> }</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</form>
+<partial name="_Paginacao" model='new Paginacao(Model.Pagina, Model.Paginas, p => Url.Page("Index", new { Pagina = p }), Model.Total, Model.Total == 1 ? "área" : "áreas")' />

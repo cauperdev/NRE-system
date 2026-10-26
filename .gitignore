@@ -1,0 +1,53 @@
+# Arquivos compilados
+bin/
+obj/
+*.exe
+*.dll
+*.pdb
+
+# IDE
+.vs/
+.vscode/
+*.csproj.user
+*.sln.user
+.idea/
+*.swp
+
+# Node/NPM
+node_modules/
+package-lock.json
+yarn.lock
+dist/
+
+# Configurações sensíveis
+appsettings.Development.json
+.env
+.env.local
+secrets.json
+
+# Sistema Operacional
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporários
+*.tmp
+*.temp
+~*
+
+# Build
+out/
+build/
+*.o
+*.a
+
+# Dados gerados ao ligar o sistema
+dados/*.db-shm
+dados/*.db-wal
+dados/https-certificado.pfx
+
+# Bibliotecas do site (Bootstrap, jQuery) fazem parte do sistema
+!wwwroot/lib/**/dist/

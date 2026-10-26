@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Programa gerado: NRE.exe. O código continua no namespace MS (veio do MS - Gestão de Manutenção). -->
+    <AssemblyName>NRE</AssemblyName>
+    <RootNamespace>MS</RootNamespace>
+    <!-- "programa" (sistema já compilado) e "dados" (banco e arquivos) não fazem parte do código -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);programa/**;programa-novo/**;dados/**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.105.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
+    <PackageReference Include="PdfPig" Version="0.1.16" />
+    <PackageReference Include="QRCoder" Version="1.8.0" />
+    <PackageReference Include="SkiaSharp" Version="4.152.1" />
+    <PackageReference Include="System.DirectoryServices.AccountManagement" Version="10.0.12" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,145 @@
+﻿@page
+@model MS.Pages.Nre.IndexModel
+@*
+    ============================================================================
+    TELA: NRE — lista (visual)  ·  lógica em Index.cshtml.cs
+    Partes: 1. filtros · 2. botões (Abrir NRE, Remover, Importar Excel) · 3. aba Lista · 4. janela Importar Excel
+    (Shared/_ModalImportar.cshtml; planilhas de NRE da Samsung, leitura em Servicos/ImportarNre.cs)
+      Lista ............... cartões com etiqueta colorida pelo status (celular/tablet) e tabela (computador) · páginas.
+                            Colunas como a planilha de NRE do cliente: Modelo · NRE · Título · NF · Invoice · Valor · DI
+                            (NF, invoice e DI vêm do Detalhado; Valor = Total a cobrar, Final Amount + taxas) + Status (23/10/2026:
+                            aprovada aparece como Concluída — Textos.NaLista; o cartão do celular usa o mesmo).
+    ============================================================================
+*@
+@{
+    ViewData["Title"] = "NRE";
+    ViewData["Trilha"] = "NRE";
+    object Filtros(int pagina) => new { Model.Status, Model.Tipo, Model.CelulaId, Model.Ano, Model.Q, Pagina = pagina };
+    // NF, Invoice e DI ESCONDIDAS da lista (tabela e cartões) a pedido do usuário em 23/10/2026, "até eu decidir se
+    // voltam ou não". O código continua aqui: para mostrar de novo, troque para true e recompile.
+    const bool mostrarNfInvoiceDi = false;
+    string Nf(Modelos.Nre n) => n.Juntar(r => r.NotaFiscal) ?? "-";
+    // NF, invoice e DI: uma por linha (com vírgula embolava conforme a NRE ganhava DI).
+    void UmPorLinha(Modelos.Nre n, Func<NreRemessa, string?> campo)
+    {
+        var l = n.Valores(campo);
+        if (l.Count == 0) { <text>-</text> }
+        foreach (var v in l) { <span class="um-por-linha">@v</span> }
+    }
+}
+<form method="get" class="filtros">
+    <select class="form-select" asp-for="Status">
+        <option value="">Status</option>
+        @* Só os status do fluxo de hoje (24/10/2026): Concluída também traz as antigas Aprovada, Aguardando chegada e Cobrada. *@
+        @foreach (var s in new[] { StatusNre.Aberta, StatusNre.Concluida }) { <option value="@s">@s.Nome()</option> }
+    </select>
+    <select class="form-select" asp-for="Tipo">
+        <option value="">Tipo</option>
+        @foreach (var t in Enum.GetValues<TipoNre>()) { <option value="@t">@t.Nome()</option> }
+    </select>
+    <select class="form-select" asp-for="Ano">
+        <option value="">Ano de abertura</option>
+        @foreach (var a in Model.Anos) { <option value="@a">@a</option> }
+    </select>
+    <input class="form-control" asp-for="Q" placeholder="NRE, título, modelo, NF, invoice, DI ou PO" />
+    <button class="btn-ms b-azulclaro" type="submit">Pesquisar</button>
+</form>
+
+<form method="post">
+    <div class="barra-acoes barra-grade">
+        @if (Model.PodeEditar)
+        {
+            <a class="btn-ms b-verde" asp-page="Editar">@Icones.Svg("mais") Abrir NRE</a>
+        }
+        @if (Model.Aprova)
+        {
+            <button class="btn-ms b-vermelho" asp-page-handler="Remover" asp-route-status="@Model.Status" asp-route-tipo="@Model.Tipo" asp-route-celulaid="@Model.CelulaId" asp-route-ano="@Model.Ano" asp-route-q="@Model.Q" data-exige-selecao=".sel-nre" data-confirmar="Remover {n} NRE marcada(s)?">@Icones.Svg("lixo") Remover selecionados</button>
+        }
+        @if (Model.PodeEditar)
+        {
+            @* Planilhas de NRE da Samsung (amarela e/ou azul): Index.cshtml.cs → OnPostImportarAsync. *@
+            <button type="button" class="btn-ms b-azul d-none d-lg-inline-flex" data-bs-toggle="modal" data-bs-target="#modalImportar">@Icones.Svg("enviar") Importar Excel</button>
+        }
+        @* Sem Extração desde 24/10/2026 (pedido do usuário): o Excel sai de cada NRE (botão Extração dentro dela). *@
+    </div>
+
+    @* Celular e tablet: cartões com etiqueta colorida pelo status (Textos.Etiqueta); computador: tabela. *@
+    <div class="legenda legenda-cores d-lg-none mt-2">
+        <span><span class="quadro atencao"></span>Aguardando aprovação</span>
+        <span><span class="quadro em-dia"></span>Concluída</span>
+        <span><span class="quadro atrasada"></span>Recusada</span>
+    </div>
+    @if (Model.Aprova && Model.Lista.Any())
+    {
+        <label class="marcar-cartoes d-lg-none">
+            <input type="checkbox" class="form-check-input" data-marcar-todos=".sel-nre" />
+            <span>Marcar todas</span><span class="text-muted">(@Model.Lista.Count())</span>
+        </label>
+    }
+    <div class="cartoes d-lg-none">
+        @foreach (var n in Model.Lista)
+        {
+            <div class="cartao-os" data-href="@Url.Page("Editar", new { id = n.Id })">
+                @if (Model.Aprova) { <input type="checkbox" class="form-check-input sel-nre mb-2" name="ids" value="@n.Id" aria-label="Marcar @n.Numero" /> }
+                <div class="ticket @n.Status.NaLista().Etiqueta()">
+                    <div><span>Modelo:</span><span>@(n.Modelo ?? "-")</span></div>
+                    <div><span>NRE:</span><span>@(n.CodigoNre ?? "-")</span></div>
+                    <div><span>Valor:</span><span>@n.TotalCobrar().Reais()</span></div>
+                </div>
+                <div class="titulo">@(n.Titulo ?? n.Maquina ?? n.Descricao)</div>
+                <div class="linha"><span>@(mostrarNfInvoiceDi ? $"NF: {Nf(n)}" : "")</span><span class="pilula @n.Status.NaLista().Css()">@n.Status.NaLista().Nome()</span></div>
+                @if (mostrarNfInvoiceDi)
+                {
+                    <div class="linha varias"><span>Invoice:</span><span class="text-end">@{ UmPorLinha(n, r => r.Invoice); }</span></div>
+                    <div class="linha varias"><span>DI:</span><span class="text-end">@{ UmPorLinha(n, r => r.Di); }</span></div>
+                }
+            </div>
+        }
+        @if (!Model.Lista.Any()) { <div class="cartao text-muted text-center">Nenhuma NRE encontrada.</div> }
+    </div>
+
+    <div class="cartao aba-conteudo d-none d-lg-block">
+        <table class="tabela tabela-cards meio">
+            <thead>
+                <tr>
+                    @if (Model.Aprova) { <th><input type="checkbox" class="form-check-input" data-marcar-todos=".sel-nre" aria-label="Marcar todas" /></th> }
+                    @* Como a planilha de NRE do cliente (a pedido). Equipamento, área, tipo e data continuam na NRE.
+                       NF, invoice e DI vêm do Detalhado; Valor = Total a cobrar (Final Amount + taxas, o quadro azul da NRE
+                       e o "VALOR TOTAL DA NF" do Fechamento — pedido do usuário em 23/10/2026; antes era o Final Amount). *@
+                    <th>Modelo</th><th>NRE</th><th>Título</th>
+                    @if (mostrarNfInvoiceDi) { <th>NF</th><th>Invoice</th> }
+                    <th class="text-end">Valor</th>
+                    @if (mostrarNfInvoiceDi) { <th>DI</th> }
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var n in Model.Lista)
+                {
+                    <tr class="linha-clicavel" data-href="@Url.Page("Editar", new { id = n.Id })">
+                        @if (Model.Aprova) { <td class="sem-rotulo acoes-linha"><input type="checkbox" class="form-check-input sel-nre" name="ids" value="@n.Id" aria-label="Marcar @n.Numero" /></td> }
+                        <td data-rotulo="Modelo" class="text-nowrap">@(n.Modelo ?? "-")</td>
+                        <td data-rotulo="NRE" class="text-nowrap">@(n.CodigoNre ?? "-")</td>
+                        <td data-rotulo="Título">@(n.Titulo ?? n.Maquina ?? n.Descricao)</td>
+                        @if (mostrarNfInvoiceDi)
+                        {
+                            <td data-rotulo="NF">@{ UmPorLinha(n, r => r.NotaFiscal); }</td>
+                            <td data-rotulo="Invoice">@{ UmPorLinha(n, r => r.Invoice); }</td>
+                        }
+                        <td data-rotulo="Valor" class="text-end text-nowrap">@n.TotalCobrar().Reais()</td>
+                        @if (mostrarNfInvoiceDi) { <td data-rotulo="DI">@{ UmPorLinha(n, r => r.Di); }</td> }
+                        <td data-rotulo="Status"><span class="pilula @n.Status.NaLista().Css()">@n.Status.NaLista().Nome()</span></td>
+                    </tr>
+                }
+                @if (!Model.Lista.Any()) { <tr><td colspan="@(mostrarNfInvoiceDi ? 9 : 6)" class="text-muted text-center">Nenhuma NRE encontrada.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+</form>
+
+<partial name="_Paginacao" model='new Paginacao(Model.Pagina, Model.Paginas, p => Url.Page("Index", Filtros(p)), Model.Total, "NRE")' />
+@if (Model.PodeEditar)
+{
+    ViewData["ImportarSemModelo"] = true;   // NRE não tem "Baixar modelo": a planilha é a da Samsung
+    <partial name="_ModalImportar" model="@("Use a planilha de NRE da Samsung: a amarela (itens, invoice, PTAX, DI, frete e seguro), a azul (Project, Item/Project, Approved Value) ou o arquivo com as duas. A azul e a amarela do mesmo arquivo viram uma NRE só. NRE com o mesmo Item/Project é atualizada; senão é criada, aguardando aprovação. O Equipamento vem da célula MAQUINA da amarela (o nome ao lado).")" />
+}

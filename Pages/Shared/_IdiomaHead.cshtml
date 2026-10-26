@@ -1,0 +1,10 @@
+@*
+    ============================================================================
+    IDIOMA AO ABRIR A PÁGINA — esconde a tela por um instante enquanto traduz, para não piscar em português.
+    ============================================================================
+*@
+@* Esconde a página por um instante enquanto traduz, para não piscar em português. *@
+<style>html.traduzindo body { visibility: hidden; }</style>
+<script>
+    try { var l = localStorage.getItem('ms-idioma'); if (l && l !== 'pt') { document.documentElement.classList.add('traduzindo'); setTimeout(function () { document.documentElement.classList.remove('traduzindo'); }, 1500); } } catch (e) { }
+</script>

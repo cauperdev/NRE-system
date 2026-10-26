@@ -1,0 +1,31 @@
+@page
+@model ErroModel
+@*
+    ============================================================================
+    TELA DE ERRO  ·  endereço /Erro
+    Aparece numa falha inesperada (Program.cs → UseExceptionHandler) e em endereço que não existe ou registro
+    apagado, com ?codigo=404 (Program.cs → UseStatusCodePagesWithReExecute).
+    - Texto da mensagem ............ aqui embaixo
+    - Detalhe técnico do erro ...... rode em modo de desenvolvimento (Ctrl+F5 no VS Code): o ASP.NET mostra tudo
+    ============================================================================
+*@
+@{
+    ViewData["Title"] = Model.NaoEncontrada ? "Página não encontrada" : "Erro";
+}
+<div class="cartao">
+    @if (Model.NaoEncontrada)
+    {
+        <h2 class="text-danger">Página não encontrada.</h2>
+        <p>O endereço não existe ou o registro foi removido (por exemplo, uma OS ou um plano apagado).</p>
+    }
+    else
+    {
+        <h2 class="text-danger">Algo deu errado.</h2>
+        <p>Não foi possível concluir o que você pediu. Tente de novo; se continuar, avise o administrador do sistema informando o código abaixo.</p>
+    }
+    @if (Model.MostrarCodigo)
+    {
+        <p><strong>Código do erro:</strong> <code>@Model.CodigoErro</code></p>
+    }
+    <a class="btn-ms b-azul" asp-page="/Index">Voltar ao início</a>
+</div>

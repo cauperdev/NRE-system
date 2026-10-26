@@ -1,0 +1,53 @@
+@page
+@model MS.Pages.Conta.LoginModel
+@*
+    ============================================================================
+    TELA: LOGIN (visual)  ·  lógica em Login.cshtml.cs  ·  não usa o molde _Layout (tela própria)
+    Cores e tamanhos: estilos.css seção 11 (fundo Índigo noite, caixa branca com o ícone da marca e o nome do sistema).
+    ============================================================================
+*@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Entrar · NRE</title>
+    <link rel="icon" href="~/img/logo.svg" asp-append-version="true" type="image/svg+xml" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/estilos.css" asp-append-version="true" />
+    <partial name="_IdiomaHead" />
+</head>
+<body>
+    <div class="pagina-login">
+        <div class="login-idioma"><partial name="_SeletorIdioma" /></div>
+        <form method="post" class="caixa-login">
+            @* Ícone da marca (wwwroot/img/logo.svg) + nome do sistema. *@
+            <img class="marca-icone" src="~/img/logo.svg" asp-append-version="true" alt="" />
+            <h1><b class="marca-sigla">NRE</b> <span class="marca-nome">System</span></h1>
+            @if (Model.Erro != null)
+            {
+                <div class="alert alert-danger py-2">@Model.Erro</div>
+            }
+            @* Com o login pela rede (AD) ligado: matrícula + senha do Windows (Servicos/Rede.cs). *@
+            <div class="mb-3">
+                <label class="form-label" for="Login">@(Model.PelaRede ? "Matrícula" : "Usuário")</label>
+                <input class="form-control manter-caixa" asp-for="Login" autocomplete="username" autofocus required />
+            </div>
+            <div class="mb-4">
+                <label class="form-label" for="Senha">@(Model.PelaRede ? "Senha de rede" : "Senha")</label>
+                <input class="form-control" asp-for="Senha" type="password" autocomplete="current-password" required />
+                @if (Model.PelaRede)
+                {
+                    <div class="form-text">Use a matrícula e a mesma senha do Windows.</div>
+                }
+            </div>
+            <button class="btn-ms b-azulclaro w-100 justify-content-center py-2" type="submit">Entrar</button>
+        </form>
+    </div>
+    <script src="~/js/ver-senha.js" asp-append-version="true"></script>
+    <script src="~/js/traducao.js" asp-append-version="true"></script>
+</body>
+</html>

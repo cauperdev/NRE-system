@@ -1,0 +1,73 @@
+@model MS.Servicos.Paginacao
+@*
+    ============================================================================
+    PAGINAÇÃO DAS LISTAS (Ordens de serviço, Cronograma, Equipamentos, Finalização, NRE, Spare Parts, Usuários, Áreas,
+    Histórico JMS — 50 por página), no centro, embaixo da lista:
+
+                        [‹ Anterior] [1] … [4] [5] [6] [7] [8] … [26] [Próxima ›]
+                              Mostrando 251–300 de 1290 ordens de serviço
+
+    Pedido do usuário em 08/10/2026: ver quantas páginas são (antes era só ‹ 1 / 26 ›). Números: a primeira, a última e
+    2 de cada lado da atual. O "Ir para a página [n] de N" que ficava ao lado saiu no mesmo dia, a pedido dele.
+    09/10/2026: botões separados "‹ Anterior" / "Próxima ›" no centro e o "Mostrando X–Y de Z" embaixo (no lugar da
+    contagem que ficava à esquerda), como a lista do IM ESTOQUE. Os botões só aparecem com mais de uma página.
+    Uso: <partial name="_Paginacao" model='new Paginacao(Model.Pagina, Model.Paginas, p => Url.Page("Index", Filtros(p)), Model.Total, "ordens de serviço")' />
+    ============================================================================
+*@
+@{
+    var atual = Model.Pagina;
+    var total = Model.Paginas;
+    var de = Model.Total == 0 ? 0 : (atual - 1) * Model.PorPagina + 1;
+    var ate = Math.Min(atual * Model.PorPagina, Model.Total);
+}
+<nav class="paginacao" aria-label="Páginas">
+    @if (total > 1)
+    {
+        var numeros = Enumerable.Range(1, total).Where(i => i == 1 || i == total || Math.Abs(i - atual) <= 2).ToList();
+        // Buraco de uma página só (ex.: 1 … 3): mostra o número em vez das reticências.
+        numeros = numeros.Concat(numeros.Zip(numeros.Skip(1)).Where(par => par.Second - par.First == 2).Select(par => par.First + 1)).Order().ToList();
+        var anterior = 0;
+        <div class="botoes">
+            @if (atual > 1)
+            {
+                <a class="pag" href="@Model.Link(atual - 1)" title="Página anterior"><span aria-hidden="true">‹</span> Anterior</a>
+            }
+            else
+            {
+                <span class="pag desligado"><span aria-hidden="true">‹</span> Anterior</span>
+            }
+            @foreach (var i in numeros)
+            {
+                if (i - anterior > 1)
+                {
+                    <span class="reticencias">…</span>
+                }
+                if (i == atual)
+                {
+                    <span class="pag atual" aria-current="page">@i</span>
+                }
+                else
+                {
+                    <a class="pag" href="@Model.Link(i)">@i</a>
+                }
+                anterior = i;
+            }
+            @if (atual < total)
+            {
+                <a class="pag" href="@Model.Link(atual + 1)" title="Próxima página">Próxima <span aria-hidden="true">›</span></a>
+            }
+            else
+            {
+                <span class="pag desligado">Próxima <span aria-hidden="true">›</span></span>
+            }
+        </div>
+    }
+    @if (Model.Total == 0)
+    {
+        <span class="contagem">0 @Model.Itens</span>
+    }
+    else
+    {
+        <span class="contagem">Mostrando @de–@ate de @Model.Total @Model.Itens</span>
+    }
+</nav>

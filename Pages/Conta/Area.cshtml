@@ -1,0 +1,170 @@
+@page
+@model MS.Pages.Conta.AreaModel
+@*
+    ============================================================================
+    TELA: ESCOLHER O CLIENTE (visual)  ·  lógica em Area.cshtml.cs  ·  não usa o molde _Layout (tela própria, como o Login)
+    Igual ao print de referência do usuário (13/10/2026):
+      - topo: marca do sistema (ícone + nome, como o topo do sistema), idioma e Sair;
+      - fundo Índigo noite com cartões brancos grandes, faixa Lavanda em cima, o logo do cliente no meio
+        (enviado na tela Áreas; sem logo = nome) e o selo "Atual" no cliente escolhido da vez anterior;
+      - CARROSSEL (21/10/2026, pedido do usuário: "os ícones vão ficando pequenos"): os cartões ficam grandes e enchem a
+        tela; o que não cabe vai para a página seguinte, com uma seta de cada lado e bolinhas embaixo (no celular também
+        dá para arrastar). Se cabem todos grandes numa tela, não tem seta. No celular estreito: um embaixo do outro,
+        rolando para baixo (script no fim desta tela);
+      - o cartão sobe um pouco com o mouse em cima. Os cartões são o único filtro de Área do sistema (sem "Todas as áreas").
+    Cores e tamanhos: estilos.css seção 11 ("Escolher o cliente").
+    ============================================================================
+*@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1A1740" />
+    <title>Escolha o cliente · NRE</title>
+    <link rel="icon" href="~/img/logo.svg" asp-append-version="true" type="image/svg+xml" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/estilos.css" asp-append-version="true" />
+    <partial name="_IdiomaHead" />
+</head>
+<body class="pagina-clientes">
+    <header class="clientes-topo">
+        <span class="marca"><img class="marca-icone" src="~/img/logo.svg" asp-append-version="true" alt="" />
+            <span class="marca-texto" data-sem-traducao><b class="marca-sigla">NRE</b> <span class="marca-nome">System</span></span></span>
+        <div class="topo-direita">
+            <partial name="_SeletorIdioma" />
+            <form method="post" asp-page="/Conta/Sair">
+                <button class="clientes-sair" type="submit">@Icones.Svg("sair", 14) Sair</button>
+            </form>
+        </div>
+    </header>
+    <main class="clientes-conteudo">
+        <h1 class="visually-hidden">Escolha o cliente</h1>
+        <div class="clientes-carrossel" id="carrossel">
+            <button type="button" class="clientes-seta anterior" id="setaAnterior" aria-label="Anteriores" hidden>@Icones.Svg("esquerda", 34)</button>
+            <nav class="clientes" id="clientes" aria-label="Clientes (áreas)">
+                @foreach (var c in Model.Celulas)
+                {
+                    var atual = Model.Escolhida == c.Id;
+                    <a class="cliente @(atual ? "ativo" : "")" asp-page-handler="Escolher" asp-route-id="@c.Id" title="@c.Nome" aria-current="@(atual ? "true" : null)">
+                        @if (atual) { <span class="selo-atual">Atual</span> }
+                        @if (c.Logo != null)
+                        {
+                            <img src="@Url.Page("/Index", "Logo", new { id = c.Id, v = c.Logo })" alt="@c.Nome" />
+                        }
+                        else
+                        {
+                            <span class="cliente-nome">@c.Nome</span>
+                        }
+                    </a>
+                }
+            </nav>
+            <button type="button" class="clientes-seta proxima" id="setaProxima" aria-label="Próximos" hidden>@Icones.Svg("direita", 34)</button>
+        </div>
+        <div class="clientes-pontos" id="pontos" hidden></div>
+    </main>
+    <script>
+        // Cartões e carrossel. 1) Testa de 1 a N cartões por linha e fica com o que deixa o cartão maior cabendo todos na
+        // tela. Se assim o cartão fica pelo menos do tamanho ALVO: uma página só, sem setas. 2) Senão, CARROSSEL: cartões
+        // de ~ALVO enchendo a tela (colunas × linhas que cabem) e o resto nas páginas seguintes, com setas e bolinhas.
+        // 3) Celular estreito (menos de ESTREITO): um embaixo do outro, rolando para baixo, como antes.
+        (function () {
+            var trilho = document.getElementById('clientes');
+            if (!trilho || !trilho.children.length) return;
+            var carrossel = document.getElementById('carrossel'), area = carrossel.parentElement, topo = document.querySelector('.clientes-topo');
+            var anterior = document.getElementById('setaAnterior'), proxima = document.getElementById('setaProxima'), pontos = document.getElementById('pontos');
+            var cartoes = Array.prototype.slice.call(trilho.children);
+            var PROPORCAO = 366 / 205, ALVO = 380, MINIMO = 220, MAXIMO = 529, VAO = 26, SETAS = 2 * 64, ESTREITO = 576;
+            var paginas = [], primeira = true;
+
+            function montar(porPagina, cartao, colunas) {
+                trilho.style.setProperty('--cartao', cartao + 'px');
+                trilho.style.setProperty('--largura', (colunas * cartao + (colunas - 1) * VAO + 1) + 'px');
+                var total = Math.ceil(cartoes.length / porPagina);
+                if (paginas.length !== total || trilho.dataset.porPagina != porPagina) {
+                    trilho.replaceChildren();
+                    paginas = [];
+                    for (var i = 0; i < total; i++) {
+                        var p = document.createElement('div');
+                        p.className = 'clientes-pagina';
+                        cartoes.slice(i * porPagina, (i + 1) * porPagina).forEach(function (c) { p.appendChild(c); });
+                        trilho.appendChild(p);
+                        paginas.push(p);
+                    }
+                    trilho.dataset.porPagina = porPagina;
+                    pontos.replaceChildren();
+                    paginas.forEach(function (_, i) {
+                        var b = document.createElement('button');
+                        b.type = 'button';
+                        b.setAttribute('aria-label', (i + 1) + ' / ' + total);
+                        b.addEventListener('click', function () { irPara(i); });
+                        pontos.appendChild(b);
+                    });
+                }
+                var varias = total > 1;
+                carrossel.classList.toggle('com-setas', varias);
+                pontos.hidden = !varias;
+                // Abre na página do cliente "Atual".
+                var ativo = trilho.querySelector('.cliente.ativo');
+                var pag = primeira && ativo ? paginas.indexOf(ativo.parentElement) : atual();
+                primeira = false;
+                irPara(Math.max(0, pag), true);
+            }
+
+            function ajustar() {
+                var borda = getComputedStyle(area), n = cartoes.length;
+                var larguraToda = area.clientWidth - parseFloat(borda.paddingLeft) - parseFloat(borda.paddingRight);
+                var altura = document.documentElement.clientHeight - (topo ? topo.offsetHeight : 0)
+                    - parseFloat(borda.paddingTop) - parseFloat(borda.paddingBottom) - 64;   // bolinhas + folga para o cartão subir
+                carrossel.classList.toggle('empilhado', larguraToda < ESTREITO);
+                if (larguraToda < ESTREITO) { montar(n, Math.floor(larguraToda), 1); return; }
+                // 1) Todos numa tela.
+                var colunas = 1, cartao = 0;
+                for (var c = 1; c <= n; c++) {
+                    var linhas = Math.ceil(n / c);
+                    var w = Math.min((larguraToda - (c - 1) * VAO) / c, (altura - (linhas - 1) * VAO) / linhas * PROPORCAO);
+                    if (w > cartao + .5) { cartao = w; colunas = c; }
+                }
+                if (cartao >= ALVO) { montar(n, Math.floor(Math.min(cartao, MAXIMO)), colunas); return; }
+                // 2) Carrossel: as setas ficam nos lados.
+                var largura = larguraToda - SETAS;
+                // Colunas e linhas: as que deixam o cartão mais perto do ALVO; depois o cartão cresce/encolhe para
+                // encher a largura e caber na altura.
+                colunas = Math.max(1, Math.round((largura + VAO) / (ALVO + VAO)));
+                cartao = Math.min((largura - (colunas - 1) * VAO) / colunas, MAXIMO);
+                var linhasPorPagina = Math.max(1, Math.round((altura + VAO) / (cartao / PROPORCAO + VAO)));
+                cartao = Math.min(cartao, (altura - (linhasPorPagina - 1) * VAO) / linhasPorPagina * PROPORCAO);
+                montar(colunas * linhasPorPagina, Math.floor(Math.max(cartao, MINIMO)), colunas);
+            }
+
+            function atual() { return trilho.clientWidth ? Math.round(trilho.scrollLeft / trilho.clientWidth) : 0; }
+            function irPara(i, semAnimar) {
+                i = Math.max(0, Math.min(paginas.length - 1, i));
+                trilho.scrollTo({ left: i * trilho.clientWidth, behavior: semAnimar ? 'auto' : 'smooth' });
+                marcar(i);
+            }
+            function marcar(i) {
+                if (i == null) i = atual();
+                anterior.hidden = !carrossel.classList.contains('com-setas') || i <= 0;
+                proxima.hidden = !carrossel.classList.contains('com-setas') || i >= paginas.length - 1;
+                Array.prototype.forEach.call(pontos.children, function (b, j) { b.classList.toggle('ativo', j === i); });
+            }
+            anterior.addEventListener('click', function () { irPara(atual() - 1); });
+            proxima.addEventListener('click', function () { irPara(atual() + 1); });
+            var quadro = 0;   // arrastar com o dedo: as setas e bolinhas acompanham
+            trilho.addEventListener('scroll', function () { cancelAnimationFrame(quadro); quadro = requestAnimationFrame(function () { marcar(); }); });
+            document.addEventListener('keydown', function (e) {
+                if (!carrossel.classList.contains('com-setas') || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+                if (e.key === 'ArrowRight') irPara(atual() + 1);
+                else if (e.key === 'ArrowLeft') irPara(atual() - 1);
+            });
+            ajustar();
+            window.addEventListener('resize', ajustar);
+        })();
+    </script>
+    <script src="~/js/traducao.js" asp-append-version="true"></script>
+</body>
+</html>

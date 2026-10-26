@@ -1,0 +1,160 @@
+@using System.Security.Claims
+@inject MS.BancoDeDados.AppDb Db
+@*
+    ============================================================================
+    MOLDE DE TODAS AS TELAS DO SISTEMA NRE — o que se repete em todas as páginas.
+    Partes, de cima para baixo:
+      1. <head> ............... título da aba, ícone, estilos (wwwroot/css/estilos.css)
+      2. Topo ................. marca do sistema (computador), hambúrguer, área escolhida, idioma (_SeletorIdioma), menu do usuário (Sair)
+      3. Menu lateral ......... "Escolher área" (cartões dos clientes, Conta/Area), NRE e Autorização, por permissão — item novo
+                                no menu: bloco <nav> (use V("modulo") para esconder)
+      4. Cabeçalho da página .. título + trilha "Início / seção / página" (ViewData["Title"], ["Trilha"]...)
+      5. Mensagens ............ verde (ok), vermelha (erro), aviso amarelo (_Aviso)
+      6. Conteúdo da página ... @RenderBody()
+      7. Rodapé ............... texto "Copyright ..."
+      8. Scripts .............. traducao.js e interacoes.js (wwwroot/js)
+    Cores e tamanhos: estilos.css seções 2, 3, 4 e 15.
+    ============================================================================
+*@
+@{
+    var grupo = Enum.TryParse<Grupo>(User.FindFirstValue(ClaimTypes.Role), out var g) ? g : Grupo.Visitante;
+    var pagina = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
+    string Ativo(string prefixo) => pagina.StartsWith(prefixo) ? "ativo" : "";
+    bool V(string m) => Acesso.PodeVer(grupo, m);
+    var trilha = ViewData["Trilha"] as string;
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1A1740" />
+    <partial name="_IdiomaHead" />
+    <title>@ViewData["Title"] · NRE</title>
+    <link rel="icon" href="~/img/logo.svg" asp-append-version="true" type="image/svg+xml" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/estilos.css" asp-append-version="true" />
+</head>
+<body>
+    @* Menu recolhido no computador (guardado ao clicar no ☰): aplica antes de a página aparecer, senão ela abre com o menu
+       e o conteúdo desliza para o lado a cada página. O resto do menu fica em interacoes.js seção 1. *@
+    <script>
+        try { if (!matchMedia('(max-width: 991.98px)').matches && localStorage.getItem('ms-menu') === 'recolhido') document.body.classList.add('menu-recolhido'); } catch (e) { }
+    </script>
+    <header class="topo">
+        @* Computador: marca do sistema em cima do menu lateral (ícone + nome; estilos.css seção 2, ".marca").
+           No celular/tablet ela fica escondida aqui e aparece no alto do menu (".lateral-marca"). *@
+        <a class="marca" asp-page="/Index">
+            <img class="marca-icone" src="~/img/logo.svg" asp-append-version="true" alt="" />
+            <span class="marca-texto" data-sem-traducao><b class="marca-sigla">NRE</b> <span class="marca-nome">System</span></span>
+        </a>
+        <button type="button" class="hamburguer" id="btnMenu" aria-label="Abrir/fechar menu" aria-controls="menuLateral">
+            @Icones.Svg("menu", 22)
+        </button>
+        <div class="topo-direita">
+            @* Área com que se está trabalhando (cookie, Servicos/AreaEscolhida.cs): mostra o nome e leva a Conta/Area para trocar. *@
+            @{
+                var areaId = AreaEscolhida.Ler(Context.Request);
+                var nomeArea = areaId is > 0 ? Db.Celulas.Find(areaId.Value)?.Nome : null;
+            }
+            <a class="btn-area" asp-page="/Conta/Area" title="Trocar a área">@Icones.Svg("celula", 16) <span>@(nomeArea ?? "Escolher área")</span></a>
+            <partial name="_SeletorIdioma" />
+            <div class="dropdown">
+                <button class="btn-usuario" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Conta">
+                    @Icones.Svg("usuario", 20)
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><span class="dropdown-item-text small text-muted">@User.Identity?.Name<br /><b>@grupo.Nome()</b></span></li>
+                    <li><hr class="dropdown-divider" /></li>
+                    <li>
+                        <form method="post" asp-page="/Conta/Sair">
+                            <button class="dropdown-item" type="submit">@Icones.Svg("sair", 16) Sair</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+    <aside class="lateral" id="menuLateral">
+        @* No celular/tablet o menu abre por cima do topo, com a marca do sistema no alto (estilos.css seção 15,
+           ".lateral-marca"). *@
+        <a class="lateral-marca" asp-page="/Index">
+            <img class="marca-icone" src="~/img/logo.svg" asp-append-version="true" alt="" />
+            <span class="marca-texto" data-sem-traducao><b class="marca-sigla">NRE</b> <span class="marca-nome">System</span></span>
+        </a>
+        <div class="lateral-usuario">
+            @Icones.Svg("usuario", 20)
+            <div>
+                <div class="nome">@User.Identity?.Name</div>
+                <span class="cargo">@Icones.Svg("escudo", 12) @grupo.Nome()</span>
+            </div>
+        </div>
+        <nav>
+            @* Volta para a tela dos cartões dos clientes (Pages/Conta/Area) para trocar a área com que se está trabalhando. *@
+            <a class="item @Ativo("/Conta/Area")" asp-page="/Conta/Area">@Icones.Svg("celula") <span>Escolher área</span></a>
+            @if (V("grupos") || V("usuarios") || V("celulas"))
+            {
+                <div class="secao">Autorização</div>
+                @if (V("grupos")) { <a class="item @Ativo("/Grupos")" asp-page="/Grupos/Index">@Icones.Svg("grupos") <span>Grupos</span></a> }
+                @if (V("usuarios")) { <a class="item @Ativo("/Usuarios")" asp-page="/Usuarios/Index">@Icones.Svg("usuario") <span>Usuários</span></a> }
+                @if (V("celulas")) { <a class="item @Ativo("/Celulas")" asp-page="/Celulas/Index">@Icones.Svg("celula") <span>Áreas</span></a> }
+            }
+            @if (V("nre"))
+            {
+                <div class="secao">Manutenção</div>
+                <a class="item @Ativo("/Nre")" asp-page="/Nre/Index">@Icones.Svg("nre") <span>NRE</span></a>
+            }
+            @if (V("manual"))
+            {
+                <div class="secao">Ajuda</div>
+                <a class="item @Ativo("/Manual")" asp-page="/Manual/Index">@Icones.Svg("livro") <span>Manual</span></a>
+            }
+        </nav>
+    </aside>
+    <div class="fundo-menu" id="fundoMenu"></div>
+
+    <main class="conteudo">
+        <div class="cabecalho-pagina">
+            <h1>@ViewData["Title"]</h1>
+            <nav class="trilha" aria-label="Trilha">
+                <a asp-page="/Index">Início</a>
+                @if (!string.IsNullOrEmpty(trilha)) { <span>/</span> <span class="trilha-secao">@trilha</span> }
+                @if (ViewData["TrilhaPagina"] is string tp)
+                {
+                    @* ?volta=1: a lista abre com o filtro que estava (Servicos/VoltaParaLista.cs). *@
+                    var trilhaUrl = ViewData["TrilhaUrl"] as string ?? "";
+                    <span>/</span> <a href="@(trilhaUrl + (trilhaUrl.Contains('?') ? "&" : "?") + "volta=1")">@tp</a>
+                }
+                <span>/</span> <span class="atual">@(ViewData["TrilhaAtual"] ?? ViewData["Title"])</span>
+            </nav>
+        </div>
+
+        @if (TempData["ok"] is string ok)
+        {
+            <div class="alert alert-success alert-dismissible fade show">@ok<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+        }
+        @if (TempData["erro"] is string erro)
+        {
+            <div class="alert alert-danger alert-dismissible fade show">@erro<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+        }
+        @if (TempData["aviso"] is string avisoJson && System.Text.Json.JsonSerializer.Deserialize<MS.Servicos.Aviso>(avisoJson) is { } aviso)
+        {
+            <partial name="_Aviso" model="aviso" />
+        }
+
+        @RenderBody()
+
+        <footer class="rodape">
+            <span>Copyright © @DateTime.Now.Year <b>NRE</b></span>
+        </footer>
+    </main>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/ver-senha.js" asp-append-version="true"></script>
+    <script src="~/js/traducao.js" asp-append-version="true"></script>
+    <script src="~/js/interacoes.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

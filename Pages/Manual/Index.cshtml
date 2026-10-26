@@ -1,0 +1,485 @@
+@page
+@model MS.Pages.Manual.IndexModel
+@*
+    ============================================================================
+    TELA: MANUAL DO NRE (visual + texto)  ·  lógica em Index.cshtml.cs  ·  menu "Ajuda › Manual"
+    Duas abas: "Fluxo da NRE" (diagrama das 6 fases, com o status e a decisão do Fechamento) e "Manual de uso".
+    Mesmo visual do Manual de uso do MS (estilos.css "Manual de uso VISUAL": .mf, .mf-passos, .mf-fig, .mf-bom, .m-btn...):
+    índice em botões e uma FICHA por assunto — cabeçalho (ícone · para que serve · quem usa) + passos numerados,
+    figura e "bom saber". Sem prints das telas (o NRE ainda não tem; para pôr, ver Print() no Manual do MS).
+    Escrito em português (data-sem-traducao: o seletor de idioma do topo não mexe no manual).
+    Vêm do código: permissões (tabela da ficha Grupos), taxa padrão, limites de arquivo e de login.
+    ============================================================================
+*@
+@inject IConfiguration Config
+@{
+    ViewData["Title"] = "Manual";
+    ViewData["Trilha"] = "Ajuda";
+    var pelaRede = Config.GetValue("AD:Ativo", false);
+    var taxa = Modelos.Nre.TaxaPadrao.ToString("0.####");
+    var mb = Anexos.TamanhoMaximo / 1024 / 1024;
+    string Tag(Grupo g) => g.Nome();
+}
+<p class="subtitulo-pagina">Como usar o sistema NRE, do login até concluir a NRE.</p>
+
+<div class="cartao">
+    <ul class="nav abas" role="tablist">
+        <li class="nav-item"><button type="button" class="nav-link active" data-bs-toggle="tab" data-bs-target="#aba-fluxo">Fluxo da NRE</button></li>
+        <li class="nav-item"><button type="button" class="nav-link" data-bs-toggle="tab" data-bs-target="#aba-manual">Manual de uso</button></li>
+    </ul>
+    <div class="tab-content">
+    @* ================================================================ FLUXO DA NRE (24/10/2026)
+       6 fases em linha (no celular, uma embaixo da outra), com a faixa do status por cima (Aguardando aprovação da 2 à 5,
+       Concluída na 6), as duas formas de começar e a decisão do Fechamento. Estilos: estilos.css "Fluxo da NRE". *@
+    <div class="tab-pane fade show active pt-3" id="aba-fluxo">
+    <div class="fx" data-sem-traducao>
+        <div class="fx-inicio">
+            <span class="fx-rot">Duas formas de começar</span>
+            <span class="fx-pill">@Icones.Svg("mais", 18)<span><b>Abrir NRE</b><small>preencher na tela</small></span></span>
+            <span class="fx-ou">ou</span>
+            <span class="fx-pill">@Icones.Svg("tabela", 18)<span><b>Importar Excel</b><small>planilha amarela e/ou azul da Samsung</small></span></span>
+        </div>
+
+        <div class="fx-trilho" aria-hidden="true">
+            <div class="fx-faixa neutra" style="--de:1;--ate:2">Antes da NRE</div>
+            <div class="fx-faixa atencao" style="--de:2;--ate:6">Aguardando aprovação · tudo pode mudar e ser salvo a qualquer hora</div>
+            <div class="fx-faixa ok" style="--de:6;--ate:7">Concluída · não muda mais</div>
+        </div>
+
+        <ol class="fx-fases">
+            <li class="fx-fase">
+                <div class="fx-topo"><span class="fx-n">1</span>@Icones.Svg("chave", 20)</div>
+                <h4>Entrar</h4>
+                <p class="fx-onde">Login › cartões das áreas</p>
+                <ul>
+                    <li>@(pelaRede ? "Matrícula + senha do Windows" : "Usuário + senha")</li>
+                    <li>Clique no cartão do cliente</li>
+                    <li>Abre a lista de NRE da área</li>
+                </ul>
+                <span class="fx-quem">Todos</span>
+            </li>
+            <li class="fx-fase">
+                <div class="fx-topo"><span class="fx-n">2</span>@Icones.Svg("nre", 20)</div>
+                <h4>Abrir a NRE</h4>
+                <p class="fx-onde">Aba Máquina e descrição</p>
+                <ul>
+                    <li><b>Área</b> (obrigatória) e Equipamento</li>
+                    <li>Tipo e descrição</li>
+                    <li><span class="m-btn verde">Abrir NRE</span> → NRE-ano-nº</li>
+                </ul>
+                <span class="fx-quem">@Tag(Grupo.Tecnico) · Coordenador</span>
+                <span class="fx-st m-st atencao">Aguardando aprovação</span>
+            </li>
+            <li class="fx-fase azul">
+                <div class="fx-topo"><span class="fx-n">3</span>@Icones.Svg("dashboard", 20)</div>
+                <h4>Aprovação do cliente</h4>
+                <p class="fx-onde">Aba Resumo · planilha azul</p>
+                <ul>
+                    <li>Data, aprovador e NRE Order</li>
+                    <li>Valor aprovado (US$) e Ptax</li>
+                    <li>O sistema calcula Final Amount, taxas e total</li>
+                </ul>
+                <span class="fx-quem">@Tag(Grupo.Tecnico) · Coordenador</span>
+                <span class="fx-st m-st atencao">Aguardando aprovação</span>
+            </li>
+            <li class="fx-fase">
+                <div class="fx-topo"><span class="fx-n">4</span>@Icones.Svg("enviar", 20)</div>
+                <h4>Compra</h4>
+                <p class="fx-onde">Aba POs</p>
+                <ul>
+                    <li>Código da PO → <span class="m-btn">Adicionar PO</span></li>
+                    <li>O código abre a PO no site de compras</li>
+                    <li>Errou? Clique na linha e corrija</li>
+                </ul>
+                <span class="fx-quem">@Tag(Grupo.Tecnico) · Coordenador</span>
+                <span class="fx-st m-st atencao">Aguardando aprovação</span>
+            </li>
+            <li class="fx-fase amarela">
+                <div class="fx-topo"><span class="fx-n">5</span>@Icones.Svg("peca", 20)</div>
+                <h4>Chegada</h4>
+                <p class="fx-onde">Abas Detalhado (amarela) e Arquivos</p>
+                <ul>
+                    <li>+ DI (importação) ou + compra nacional (NF)</li>
+                    <li>Itens, PTAX, frete e seguro</li>
+                    <li>Anexar invoice, DI e NF (Ctrl + V cola print)</li>
+                </ul>
+                <span class="fx-quem">@Tag(Grupo.Tecnico) · Coordenador</span>
+                <span class="fx-st m-st atencao">Aguardando aprovação</span>
+            </li>
+            <li class="fx-fase verde">
+                <div class="fx-topo"><span class="fx-n">6</span>@Icones.Svg("ok", 20)</div>
+                <h4>Fechar</h4>
+                <p class="fx-onde">Fechamento › botões do lado</p>
+                <ul>
+                    <li>Confira o Fechamento (veja abaixo)</li>
+                    <li><span class="m-btn verde">Concluir NRE</span></li>
+                    <li><span class="m-btn">Extração</span> = Excel Resumo + Detalhado</li>
+                </ul>
+                <span class="fx-quem">@Tag(Grupo.Tecnico) · Coordenador</span>
+                <span class="fx-st m-st ok">Concluída</span>
+            </li>
+        </ol>
+
+        <h3 class="fx-titulo">No Fechamento (fim da aba Detalhado)</h3>
+        <div class="fx-decisao">
+            <span class="fx-caixa">Real<small>itens + frete + seguro</small></span>
+            <span class="fx-seta">→</span>
+            <span class="fx-losango"><span>Igual ao aprovado?</span></span>
+            <div class="fx-ramos">
+                <div><span class="fx-sim">Sim</span><span class="fx-seta">→</span><span class="fx-caixa ok">Concluir NRE</span></div>
+                <div><span class="fx-nao">Não</span><span class="fx-seta">→</span><span class="fx-caixa">Custo absorvido pela empresa<small>+ motivo da diferença</small></span><span class="fx-seta">→</span><span class="fx-caixa ok">Concluir NRE</span></div>
+            </div>
+        </div>
+
+        <h3 class="fx-titulo">Regras do fluxo</h3>
+        <div class="mf-bom">
+            <div>@Icones.Svg("editar", 18)<div><b>Tudo muda até concluir</b><small>salve quando quiser e volte quando as DIs e NFs chegarem</small></div></div>
+            <div class="alerta">@Icones.Svg("alerta", 18)<div><b>Concluída não muda mais</b><small>só dá para anexar arquivos e tirar a Extração</small></div></div>
+            <div>@Icones.Svg("tabela", 18)<div><b>Importar Excel nunca duplica</b><small>mesma NRE Order ou Item/Project = atualiza; concluída não muda</small></div></div>
+            <div>@Icones.Svg("lixo", 18)<div><b>Remover NRE</b><small>só quem tem "NRE — aprovação" (Coordenador e Administrador)</small></div></div>
+            <div>@Icones.Svg("celula", 18)<div><b>Toda NRE é de uma área</b><small>a lista mostra só a área escolhida nos cartões</small></div></div>
+            <div>@Icones.Svg("historico", 18)<div><b>Histórico</b><small>cada mudança fica registrada: quem, quando, de → para</small></div></div>
+        </div>
+    </div>
+    </div>
+
+    <div class="tab-pane fade pt-3" id="aba-manual">
+<div class="manual" data-sem-traducao>
+    <nav class="manual-indice" aria-label="Índice do manual">
+        <a href="#m-visao">1. Visão geral</a>
+        <a href="#m-entrar">2. Entrar e escolher a área</a>
+        <a href="#m-lista">3. Lista de NRE</a>
+        <a href="#m-abrir">4. Abrir uma NRE</a>
+        <a href="#m-resumo">5. Resumo</a>
+        <a href="#m-detalhado">6. Detalhado</a>
+        <a href="#m-pos">7. POs</a>
+        <a href="#m-arquivos">8. Arquivos</a>
+        <a href="#m-concluir">9. Salvar, Extração e Concluir</a>
+        <a href="#m-importar">10. Importar Excel</a>
+        <a href="#m-grupos">11. Grupos e permissões</a>
+        <a href="#m-cadastros">12. Áreas e usuários</a>
+        <a href="#m-problemas">13. Se algo não funcionar</a>
+    </nav>
+
+    @* ================================================================ 1. VISÃO GERAL *@
+    <section id="m-visao" class="mf">
+        <header class="mf-cab">
+            <span class="mf-ic">@Icones.Svg("livro", 24)</span>
+            <div><h2>1. Visão geral</h2><p>NRE = gasto não recorrente de uma máquina, cobrado do cliente (a área).</p></div>
+        </header>
+        <div class="m-fluxo">
+            <div><span class="n">1</span><b>Abrir NRE</b><small>equipamento, área e tipo</small><span class="m-tag">@Tag(Grupo.Tecnico)</span></div>
+            <div class="azul"><span class="n">2</span><b>Resumo</b><small>aprovação do cliente (planilha azul)</small><span class="m-tag">@Tag(Grupo.Tecnico)</span></div>
+            <div class="azul"><span class="n">3</span><b>Detalhado</b><small>DIs e NFs da compra (planilha amarela)</small><span class="m-tag">@Tag(Grupo.Tecnico)</span></div>
+            <div><span class="n">4</span><b>POs e arquivos</b><small>códigos de compra, invoices, DIs, NFs</small><span class="m-tag">@Tag(Grupo.Tecnico)</span></div>
+            <div class="verde"><span class="n">5</span><b>Concluir</b><small>depois de concluída, não muda mais</small><span class="m-tag">@Tag(Grupo.Tecnico) · Coordenador</span></div>
+        </div>
+        <div class="mf-fig">
+            <span class="rotulo">Status:</span>
+            <span class="m-st atencao">Aguardando aprovação</span><span class="seta">›</span>
+            <span class="m-st ok">Concluída</span>
+        </div>
+        <div class="m-termos">
+            <div><b>NRE</b><span>o pedido de cobrança; número NRE-ano-nº</span></div>
+            <div><b>Área</b><span>o cliente que paga (SAMSUNG, AVELL...)</span></div>
+            <div><b>DI</b><span>declaração de importação (compra de fora)</span></div>
+            <div><b>Invoice</b><span>fatura do fornecedor de fora, em US$</span></div>
+            <div><b>NF</b><span>nota fiscal (compra nacional, em R$)</span></div>
+            <div><b>PTAX</b><span>cotação do dólar usada na conta</span></div>
+            <div><b>Final Amount</b><span>valor em reais (US$ × PTAX)</span></div>
+            <div><b>Total a cobrar</b><span>Final Amount + taxas (@taxa%)</span></div>
+            <div><b>NRE Order</b><span>o número da NRE no cliente</span></div>
+            <div><b>PO</b><span>código do pedido de compra</span></div>
+        </div>
+    </section>
+
+    @* ================================================================ 2. ENTRAR *@
+    <section id="m-entrar" class="mf">
+        <header class="mf-cab">
+            <span class="mf-ic">@Icones.Svg("chave", 24)</span>
+            <div><h2>2. Entrar e escolher a área</h2><p>Depois do login vêm os cartões dos clientes: o cartão escolhido filtra o sistema.</p></div>
+            <div class="mf-quem"><span class="m-tag">Todos</span></div>
+        </header>
+        <ol class="mf-passos">
+            <li>@(pelaRede ? "Matrícula + senha do Windows" : "Usuário + senha") → <span class="m-btn claro">Entrar</span></li>
+            <li>Clique no <b>cartão do cliente</b> (área)</li>
+            <li>Abre a lista de <b>NRE</b> só daquela área</li>
+        </ol>
+        <div class="mf-fig">
+            <span class="m-caixa"><b>Login</b></span><span class="seta">›</span>
+            <span class="m-caixa"><b>Cartões</b><small>SAMSUNG · AVELL...</small></span><span class="seta">›</span>
+            <span class="m-caixa ok"><b>NRE da área</b></span>
+        </div>
+        <div class="mf-bom">
+            <div>@Icones.Svg("celula", 18)<div><b>Trocar de área</b><small>botão com o nome da área no topo, ou "Escolher área" no menu</small></div></div>
+            <div class="alerta">@Icones.Svg("alerta", 18)<div><b>@TentativasLogin.Maximo senhas erradas = espere @TentativasLogin.Pausa.TotalMinutes.ToString("0") min</b></div></div>
+            @if (pelaRede) { <div>@Icones.Svg("usuario", 18)<div><b>1º acesso entra como Visitante</b><small>peça o seu grupo ao administrador</small></div></div> }
+            <div>@Icones.Svg("sair", 18)<div><b>Sair</b><small>no boneco do canto de cima, à direita</small></div></div>
+        </div>
+    </section>
+
+    @* ================================================================ 3. LISTA *@
+    <section id="m-lista" class="mf">
+        <header class="mf-cab">
+            <span class="mf-ic">@Icones.Svg("nre", 24)</span>
+            <div><h2>3. Lista de NRE</h2><p>Todas as NRE da área escolhida; as que aguardam aprovação vêm primeiro.</p></div>
+            <div class="mf-quem"><span class="m-tag">@Tag(Grupo.Tecnico) · Coordenador</span></div>
+        </header>
+        <ol class="mf-passos">
+            <li>Filtre por <b>Status</b>, <b>Tipo</b> ou <b>Ano</b></li>
+            <li>Pesquise por NRE, título, modelo, NF, invoice, DI ou PO → <span class="m-btn claro">Pesquisar</span></li>
+            <li>Clique na NRE para abrir</li>
+        </ol>
+        <div class="mf-fig">
+            <span class="m-btn verde">+ Abrir NRE</span><span class="m-btn">Importar Excel</span><span class="m-btn vermelho">Remover selecionados</span>
+        </div>
+        <div class="mf-bom">
+            <div>@Icones.Svg("tabela", 18)<div><b>Colunas</b><small>Modelo · NRE · Título · Valor (total a cobrar) · Status</small></div></div>
+            <div>@Icones.Svg("lixo", 18)<div><b>Remover: só quem aprova NRE</b><small>marque as caixinhas → Remover selecionados (os arquivos saem junto)</small></div></div>
+            <div>@Icones.Svg("os", 18)<div><b>50 por página</b><small>números das páginas embaixo</small></div></div>
+        </div>
+    </section>
+
+    @* ================================================================ 4. ABRIR *@
+    <section id="m-abrir" class="mf">
+        <header class="mf-cab">
+            <span class="mf-ic">@Icones.Svg("mais", 24)</span>
+            <div><h2>4. Abrir uma NRE</h2><p>Comece pela aba <b>Máquina e descrição</b>.</p></div>
+            <div class="mf-quem"><span class="m-tag">@Tag(Grupo.Tecnico) · Coordenador</span></div>
+        </header>
+        <ol class="mf-passos">
+            <li><span class="m-btn verde">+ Abrir NRE</span> na lista</li>
+            <li><b>Área</b> (obrigatória)</li>
+            <li><b>Equipamento</b> (opcional: escolha da lista ou digite), <b>Tipo</b> e <b>Descrição</b></li>
+            <li><span class="m-btn verde">Abrir NRE</span> (botão do lado)</li>
+        </ol>
+        <div class="mf-fig">
+            <span class="rotulo">Tipo:</span>
+            @foreach (var t in Enum.GetValues<TipoNre>()) { <span class="m-caixa"><b>@t.Nome()</b></span> }
+        </div>
+        <div class="mf-bom">
+            <div class="ok">@Icones.Svg("ok", 18)<div><b>Nasce "Aguardando aprovação"</b><small>na área escolhida nos cartões, com o próximo número (NRE-ano-nº)</small></div></div>
+            <div>@Icones.Svg("editar", 18)<div><b>Tudo muda até concluir</b><small>as DIs e NFs chegam depois da compra: volte e complete</small></div></div>
+        </div>
+    </section>
+
+    @* ================================================================ 5. RESUMO *@
+    <section id="m-resumo" class="mf">
+        <header class="mf-cab">
+            <span class="mf-ic">@Icones.Svg("dashboard", 24)</span>
+            <div><h2>5. Resumo <span class="m-st azul">planilha azul</span></h2><p>A aprovação do cliente e as contas da NRE.</p></div>
+        </header>
+        <ol class="mf-passos">
+            <li>Data da aprovação, Modelo, Item / Projeto</li>
+            <li>Valor aprovado (US$) e Ptax</li>
+            <li>Aprovador e NRE Order</li>
+        </ol>
+        <div class="mf-fig">
+            <span class="rotulo">Em cinza o sistema calcula:</span>
+            <span class="m-caixa"><b>Final Amount</b><small>aprovado × Ptax</small></span><span class="seta">+</span>
+            <span class="m-caixa"><b>Taxas</b><small>Final Amount × @taxa%</small></span><span class="seta">=</span>
+            <span class="m-caixa ok"><b>Total a cobrar</b></span>
+        </div>
+        <div class="mf-bom">
+            <div>@Icones.Svg("tabela", 18)<div><b>Contas e tabela por DI / NF</b><small>embaixo, como a aba Summary da planilha; com o Detalhado preenchido, usam os valores reais</small></div></div>
+            <div class="alerta">@Icones.Svg("alerta", 18)<div><b>▲ / ▼ diferença do aprovado</b><small>aparece quando o real (itens + frete + seguro) passa ou fica abaixo do aprovado</small></div></div>
+            <div>@Icones.Svg("editar", 18)<div><b>Números do jeito brasileiro</b><small>5.594,88 · Ptax 5,56</small></div></div>
+        </div>
+    </section>
+
+    @* ================================================================ 6. DETALHADO *@
+    <section id="m-detalhado" class="mf">
+        <header class="mf-cab">
+            <span class="mf-ic">@Icones.Svg("peca", 24)</span>
+            <div><h2>6. Detalhado <span class="m-st amarela">planilha amarela</span></h2><p>Um bloco por DI (importação) ou por compra nacional (NF), com os itens.</p></div>
+        </header>
+        <ol class="mf-passos">
+            <li><span class="m-btn">+ Adicionar DI (importação)</span> ou <span class="m-btn">+ Adicionar compra nacional (NF)</span></li>
+            <li>DI, Invoice, NF, PTAX, Fornecedor</li>
+            <li><span class="m-btn">+ Item</span>: código, descrição, quantidade e valor unitário</li>
+            <li>Frete e seguro → <span class="m-btn verde">Pronto</span></li>
+        </ol>
+        <div class="mf-fig">
+            <span class="m-caixa"><b>DI (importação)</b><small>itens em US$ · reais = US$ × PTAX</small></span>
+            <span class="m-caixa"><b>Compra nacional</b><small>itens em R$ · Ptax só de referência</small></span>
+        </div>
+        <h3>Fechamento (fim da aba)</h3>
+        <div class="mf-fig">
+            <span class="m-caixa"><b>Total NF</b><small>custo real</small></span><span class="seta">+</span>
+            <span class="m-caixa"><b>Taxa %</b><small>vazio = @taxa%</small></span><span class="seta">·</span>
+            <span class="m-caixa"><b>Diferença</b><small>aprovado × real</small></span><span class="seta">·</span>
+            <span class="m-caixa"><b>Custo absorvido pela empresa</b></span><span class="m-caixa"><b>Motivo da diferença</b></span>
+        </div>
+        <div class="mf-bom">
+            <div>@Icones.Svg("editar", 18)<div><b>Bloco salvo abre em leitura</b><small><span class="m-btn cinza">Editar</span> para mudar · lixeira tira o bloco</small></div></div>
+            <div class="alerta">@Icones.Svg("alerta", 18)<div><b>DI sem PTAX não entra nas contas</b><small>aparece "PTAX pendente" até preencher</small></div></div>
+        </div>
+    </section>
+
+    @* ================================================================ 7. POs *@
+    <section id="m-pos" class="mf">
+        <header class="mf-cab">
+            <span class="mf-ic">@Icones.Svg("enviar", 24)</span>
+            <div><h2>7. POs</h2><p>Os códigos das compras; cada código abre a PO no site de compras.</p></div>
+        </header>
+        <ol class="mf-passos">
+            <li>Digite o código → <span class="m-btn">Adicionar PO</span> (ou Enter)</li>
+            <li>Corrigir: clique na <b>linha</b> → o código sobe para a caixa → <span class="m-btn verde">Salvar</span> ou <span class="m-btn cinza">Cancelar</span></li>
+            <li>Remover: marque → <span class="m-btn vermelho">Remover selecionadas</span></li>
+        </ol>
+        <div class="mf-bom">
+            <div>@Icones.Svg("ver", 18)<div><b>Clicar no código abre o site</b><small>em outra aba do navegador</small></div></div>
+            <div class="alerta">@Icones.Svg("alerta", 18)<div><b>Só vale depois de Salvar a NRE</b><small>código repetido não entra duas vezes</small></div></div>
+        </div>
+    </section>
+
+    @* ================================================================ 8. ARQUIVOS *@
+    <section id="m-arquivos" class="mf">
+        <header class="mf-cab">
+            <span class="mf-ic">@Icones.Svg("arquivo", 24)</span>
+            <div><h2>8. Arquivos</h2><p>Invoices, DIs, NFs, evidências e outros, separados por tipo.</p></div>
+        </header>
+        <ol class="mf-passos">
+            <li>Escolha o <b>tipo</b> (Invoice, DI, NF, Evidência, Outro)</li>
+            <li><span class="m-btn contorno">Escolher arquivos</span> (pode vários)</li>
+            <li><span class="m-btn">Anexar</span> (ou vão juntos no Salvar)</li>
+        </ol>
+        <div class="mf-bom">
+            <div class="ok">@Icones.Svg("camera", 18)<div><b>Print: Ctrl + V</b><small>copie o print e cole na NRE: vira PDF</small></div></div>
+            <div>@Icones.Svg("arquivo", 18)<div><b>Viram PDF</b><small>imagem, foto, Word, Excel, PowerPoint, texto e e-mail do Outlook</small></div></div>
+            <div class="alerta">@Icones.Svg("alerta", 18)<div><b>Até @mb MB por arquivo</b><small>o X vermelho remove o arquivo</small></div></div>
+        </div>
+    </section>
+
+    @* ================================================================ 9. BOTÕES *@
+    <section id="m-concluir" class="mf">
+        <header class="mf-cab">
+            <span class="mf-ic">@Icones.Svg("ok", 24)</span>
+            <div><h2>9. Salvar, Extração e Concluir</h2><p>Os botões ao lado da NRE.</p></div>
+        </header>
+        <div class="mf-fig">
+            <span class="m-caixa"><span class="m-btn verde">Salvar</span><small>grava todas as abas</small></span>
+            <span class="m-caixa"><span class="m-btn">Extração</span><small>Excel com as abas Resumo e Detalhado</small></span>
+            <span class="m-caixa"><span class="m-btn verde">Concluir NRE</span><small>fecha a NRE</small></span>
+            <span class="m-caixa"><span class="m-btn vermelho">Remover</span><small>só quem aprova NRE</small></span>
+            <span class="m-caixa"><span class="m-btn contorno">Histórico</span><small>quem mudou o quê e quando</small></span>
+        </div>
+        <div class="mf-bom">
+            <div class="alerta">@Icones.Svg("alerta", 18)<div><b>Concluída não muda mais</b><small>confira Resumo, Detalhado e arquivos antes de concluir</small></div></div>
+            <div>@Icones.Svg("historico", 18)<div><b>Histórico</b><small>mostra só o que mudou: de → para, DI por DI e item por item</small></div></div>
+        </div>
+    </section>
+
+    @* ================================================================ 10. IMPORTAR *@
+    <section id="m-importar" class="mf">
+        <header class="mf-cab">
+            <span class="mf-ic">@Icones.Svg("tabela", 24)</span>
+            <div><h2>10. Importar Excel</h2><p>Traz as planilhas de NRE da Samsung para o sistema.</p></div>
+            <div class="mf-quem"><span class="m-tag">@Tag(Grupo.Tecnico) · Coordenador</span><span class="m-tag">no computador</span></div>
+        </header>
+        <ol class="mf-passos">
+            <li>Na lista: <span class="m-btn">Importar Excel</span></li>
+            <li>Escolha o arquivo <b>.xlsx</b> → Importar</li>
+            <li>Leia o <b>aviso amarelo</b>: criadas, atualizadas e o que falta</li>
+        </ol>
+        <div class="mf-fig">
+            <span class="m-st amarela">amarela</span><span class="seta">›</span><span class="m-caixa"><b>Detalhado</b><small>itens, invoice, PTAX, DI, frete, seguro</small></span>
+            <span class="m-st azul">azul</span><span class="seta">›</span><span class="m-caixa"><b>Resumo</b><small>Project, Item/Project, Approved Value</small></span>
+        </div>
+        <div class="mf-bom">
+            <div class="ok">@Icones.Svg("ok", 18)<div><b>Nunca duplica</b><small>mesma NRE Order ou Item/Project = atualiza; senão cria, aguardando aprovação</small></div></div>
+            <div>@Icones.Svg("celula", 18)<div><b>Nasce na área escolhida</b><small>o Equipamento vem da linha MAQUINA da amarela</small></div></div>
+            <div class="alerta">@Icones.Svg("alerta", 18)<div><b>Concluída não é alterada</b><small>e-mails colados dentro do Excel não vêm: anexe em Arquivos</small></div></div>
+        </div>
+    </section>
+
+    @* ================================================================ 11. GRUPOS *@
+    <section id="m-grupos" class="mf">
+        <header class="mf-cab">
+            <span class="mf-ic">@Icones.Svg("escudo", 24)</span>
+            <div><h2>11. Grupos e permissões</h2><p>O grupo decide o que cada pessoa vê e edita.</p></div>
+            <div class="mf-quem"><span class="m-tag">Administrador</span></div>
+        </header>
+        <div class="mf-fig">
+            <span class="m-caixa"><b>@Tag(Grupo.Visitante)</b><small>consulta</small></span>
+            <span class="m-caixa"><b>@Tag(Grupo.Tecnico)</b><small>abre e acompanha NRE</small></span>
+            <span class="m-caixa"><b>@Tag(Grupo.Coordenador)</b><small>conclui e remove</small></span>
+            <span class="m-caixa"><b>@Tag(Grupo.Administrador)</b><small>tudo</small></span>
+        </div>
+        <ol class="mf-passos">
+            <li>Menu <b>Grupos</b> → abra o grupo</li>
+            <li>Marque <b>Ver</b> e <b>Editar</b> → <span class="m-btn verde">Salvar</span></li>
+        </ol>
+        <h3>Permissões valendo agora</h3>
+        <div class="manual-tabela">
+            <table class="tabela">
+                <thead><tr><th>Tela</th>@foreach (var g in Acesso.Grupos) { <th>@g.Nome()</th> }</tr></thead>
+                <tbody>
+                    @foreach (var m in Acesso.Modulos)
+                    {
+                        <tr>
+                            <td><b>@m.Nome</b>@if (m.Ajuda != "") { <div class="manual-ajuda">@m.Ajuda</div> }</td>
+                            @foreach (var g in Acesso.Grupos)
+                            {
+                                if (Acesso.PodeEditar(g, m.Chave) && m.TemEditar)
+                                {
+                                    <td><span class="m-perm edita">@Icones.Svg("editar", 12) edita</span></td>
+                                }
+                                else if (Acesso.PodeVer(g, m.Chave) && m.TemVer)
+                                {
+                                    <td><span class="m-perm ve">@Icones.Svg("ver", 12) vê</span></td>
+                                }
+                                else
+                                {
+                                    <td class="text-muted">—</td>
+                                }
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    @* ================================================================ 12. CADASTROS *@
+    <section id="m-cadastros" class="mf">
+        <header class="mf-cab">
+            <span class="mf-ic">@Icones.Svg("usuario", 24)</span>
+            <div><h2>12. Áreas e usuários</h2><p>Os clientes (cartões) e quem entra no sistema.</p></div>
+            <div class="mf-quem"><span class="m-tag">Coordenador · Administrador</span></div>
+        </header>
+        <div class="mf-fig">
+            <span class="rotulo">Áreas:</span>
+            <span class="m-caixa"><b>Nome + logo</b></span><span class="seta">›</span><span class="m-btn verde">Adicionar área</span>
+            <span class="seta">·</span><span class="m-caixa"><b>Clique na área</b><small>renomear ou trocar o logo</small></span>
+        </div>
+        <div class="mf-fig">
+            <span class="rotulo">Usuários:</span>
+            <span class="m-caixa"><b>@(pelaRede ? "Matrícula" : "Usuário")</b></span><span class="m-caixa"><b>Nome</b></span>
+            <span class="m-caixa"><b>Grupo</b></span><span class="m-caixa"><b>Área</b></span><span class="seta">›</span><span class="m-btn verde">Salvar</span>
+        </div>
+        <div class="mf-bom">
+            <div>@Icones.Svg("celula", 18)<div><b>O logo aparece no cartão</b><small>sem logo, o cartão mostra o nome</small></div></div>
+            <div>@Icones.Svg("usuario", 18)<div><b>Tirar o acesso: desmarque Ativo</b></div></div>
+        </div>
+    </section>
+
+    @* ================================================================ 13. PROBLEMAS *@
+    <section id="m-problemas" class="mf">
+        <header class="mf-cab">
+            <span class="mf-ic">@Icones.Svg("ajuda", 24)</span>
+            <div><h2>13. Se algo não funcionar</h2><p>Problema → o que fazer.</p></div>
+        </header>
+        <div class="m-qa">
+            <div>@Icones.Svg("chave", 18)<b>"Muitas senhas erradas"</b><span>Espere @TentativasLogin.Pausa.TotalMinutes.ToString("0") minutos.</span></div>
+            <div>@Icones.Svg("escudo", 18)<b>Não vejo uma tela ou botão</b><span>Fale com o administrador (permissão do grupo).</span></div>
+            <div>@Icones.Svg("celula", 18)<b>A NRE sumiu da lista</b><span>Veja a área escolhida no topo e os filtros.</span></div>
+            <div>@Icones.Svg("alerta", 18)<b>Total não bate com a planilha</b><span>Confira a PTAX de cada DI e a taxa no Fechamento.</span></div>
+            <div>@Icones.Svg("arquivo", 18)<b>Arquivo recusado</b><span>Tipo não aceito ou maior que @mb MB.</span></div>
+            <div>@Icones.Svg("celular", 18)<b>Não abre em outro PC</b><span>Use o endereço https com a porta 5464, na rede da empresa.</span></div>
+        </div>
+    </section>
+</div>
+    </div>
+    </div>
+</div>

@@ -1,0 +1,32 @@
+@model MS.Pages.Nre.EditarModel.ItemVisao
+@*
+    Linha de item do Detalhado da NRE (dentro de um bloco de _BlocoNre). Cada célula tem o texto (leitura) e o campo
+    (edição); o bloco em edição (.editando) mostra os campos. Colunas: importação → Código · Descrição · Qtd. · US$ unit. ·
+    US$ total · R$ total (US$ × PTAX); compra nacional → Código · Descrição · Qtd. · R$ unit. · R$ total.
+    Nomes Remessas[b].Itens[i].X: o script de Editar.cshtml renumera antes de enviar (linha nova vem sem nome).
+*@
+@{
+    var e = Model.Entrada;
+    var imp = Model.CalculoBloco.Importacao;
+    var item = Model.Calculo;
+    string Nome(string campo) => Model.Bloco >= 0 && Model.Indice >= 0 ? $"Remessas[{Model.Bloco}].Itens[{Model.Indice}].{campo}" : "";
+    var temUsd = imp && item.ValorUnitarioUsd != null;
+    decimal? reais = imp && temUsd ? Model.CalculoBloco.Reais(item.TotalUsd()) : item.Total();
+}
+<tr data-item>
+    <td class="esq cod"><span class="ler" data-ver="Codigo">@(string.IsNullOrWhiteSpace(e.Codigo) ? "—" : e.Codigo)</span><input class="form-control form-control-sm editar" data-campo="Codigo" name="@Nome("Codigo")" value="@e.Codigo" maxlength="60" aria-label="Código" /></td>
+    <td class="esq"><span class="ler" data-ver="Descricao">@e.Descricao</span><input class="form-control form-control-sm editar" data-campo="Descricao" name="@Nome("Descricao")" value="@e.Descricao" maxlength="500" placeholder="Descrição" aria-label="Descrição" /></td>
+    <td><span class="ler" data-ver="Quantidade">@e.Quantidade</span><input class="form-control form-control-sm num editar" data-campo="Quantidade" name="@Nome("Quantidade")" value="@(e.Quantidade ?? "1")" inputmode="decimal" aria-label="Qtd." /></td>
+    @if (imp)
+    {
+        <td class="dir"><span class="ler" data-ver="ValorUnitarioUsd">@e.ValorUnitarioUsd</span><input class="form-control form-control-sm num editar" data-campo="ValorUnitarioUsd" name="@Nome("ValorUnitarioUsd")" value="@e.ValorUnitarioUsd" inputmode="decimal" placeholder="0,00" aria-label="US$ unit." /><input type="hidden" data-campo="ValorUnitario" name="@Nome("ValorUnitario")" value="@e.ValorUnitario" /></td>
+        <td class="dir" data-calc="usd">@(temUsd ? item.TotalUsd().ToString("N2") : "")</td>
+        <td class="dir calc" data-calc="brl">@(reais?.ToString("N2") ?? "—")</td>
+    }
+    else
+    {
+        <td class="dir"><span class="ler" data-ver="ValorUnitario">@e.ValorUnitario</span><input class="form-control form-control-sm num editar" data-campo="ValorUnitario" name="@Nome("ValorUnitario")" value="@e.ValorUnitario" inputmode="decimal" placeholder="0,00" aria-label="R$ unit." /></td>
+        <td class="dir calc" data-calc="brl">@item.Total().ToString("N2")</td>
+    }
+    <td class="col-x editar"><button type="button" class="btn btn-sm btn-outline-danger" data-remover-linha="tr" title="Tirar este item">@Icones.Svg("x", 14)</button></td>
+</tr>

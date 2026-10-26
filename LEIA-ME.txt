@@ -1,0 +1,65 @@
+﻿NRE - LEIA-ME
+=============
+
+O que é: a parte de NRE do MS (Gestão de Manutenção) separada num sistema próprio.
+Mesmo visual e mesmas regras: Login -> cartões das áreas (filtro por área) -> NRE.
+
+
+COMO LIGAR
+----------
+  - iniciar.bat ............ abre só neste computador: http://localhost:5110
+  - iniciar-na-rede.bat .... abre também no celular/outros PCs: https://IP-DESTE-PC:5464
+  Sem a pasta "programa", o iniciar.bat roda pelo código-fonte (precisa do .NET 10 SDK).
+  Deixe a janela preta aberta enquanto usa. Fechar a janela desliga o sistema.
+  Pode ficar ligado junto com o MS (o MS usa a porta 5100).
+
+
+ENTRAR
+------
+  - Conta local ....... usuário + senha do sistema (as contas da tabela abaixo).
+  - Pela rede (AD) .... matrícula + senha do Windows. Quem entra pela primeira vez vira
+                        Visitante; o administrador troca o grupo na tela Usuários.
+                        Desligado nesta cópia ("AD" no appsettings.json).
+
+No banco que está na pasta "dados" valem os usuários e senhas cadastrados na tela Usuários
+(no banco de demonstração: os da tabela abaixo).
+
+Usuários de demonstração (criados junto com um banco novo):
+
+    Usuário              Senha       Grupo
+    -------------------  ----------  -------------
+    admin                admin123    Administrador
+    coordenador          123456      Coordenador
+    analista / analista2 123456      Analista
+    visitante            123456      Visitante
+
+Troque essas senhas antes de usar o sistema de verdade (tela Usuários).
+
+
+GRUPOS (o que cada um faz no NRE)
+---------------------------------
+  - Visitante ....... só lê o Manual
+  - Analista ........ abre e acompanha NRE, conclui
+  - Coordenador ..... o mesmo do Analista + remove NRE + cadastra usuários e áreas
+  - Administrador ... tudo, inclusive as permissões (tela Grupos)
+
+
+DADOS (pasta "dados")
+---------------------
+  - nre.db ...... banco de demonstração (usuários e 6 NRE de exemplo, valores fictícios).
+                  Apagar a pasta "dados" cria um banco novo de demonstração ao ligar.
+  - anexos ...... arquivos das NRE (invoice, DI, NF...)
+  - fotos ....... logos das áreas (cartões)
+  Faça backup copiando a pasta "dados" com o sistema desligado.
+
+
+TELAS
+-----
+  - NRE ........................ lista, importar Excel, abrir/acompanhar cada NRE
+  - Grupos / Usuários / Áreas .. quem vê e edita o quê, cadastro de pessoas e das áreas (logos)
+  - Manual ..................... fluxo da NRE e como usar cada tela
+
+
+MUDOU O CÓDIGO?
+---------------
+  Rode atualizar-programa.bat (precisa do .NET 10 SDK). Ele recompila o NRE.exe na pasta "programa".
